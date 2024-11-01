@@ -1,7 +1,7 @@
 # Team Members
 | Name       | Student ID |
 | ---------- | ---------- |
-| Ming Yang  | 8888888888 |
+| Ming Yang  | 1006262223 |
 | Xinran Ji  | 1006093843 |
 | Yukun Zhou | 1010122494 |
 
