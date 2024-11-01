@@ -62,6 +62,9 @@
   Users can join the group by a short join code within the time limit. After that, user can still use the unique group id (usually longer) to join the group.
 
 # Tentative Plan
-- timetable
-- workload allocation
-- 
+Generally, we decided to split the whole project into three parts:
+1. Front end
+   1. Graphic user interface
+   2. Client
+2. interface
+3. Backend
