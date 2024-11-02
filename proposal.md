@@ -5,10 +5,10 @@
 | Xinran Ji  | 1006093843 |
 | Yukun Zhou | 1010122494 |
 
-# Motivation
-- simple chat application
-- for public chat purpose (course discussion etc.)
-- instant grouping
+# Motivation 
+  There are many chat applications available, each with different features. However, privacy and security requirements often complicate the process of online chatting. Typically, users must request permission to add others as friends, using either a QR code or an account number, which can make it difficult to start a group chat quickly. In many situations, however, instant online communication is essential. For example, in a classroom activity or event, a teacher or organizer might need to quickly set up a chat group for collecting information or course discussions or so on.  
+  If they could create a temporary chat group that lasts only an hour or so, allowing everyone involved to join simply by entering a group number or access code (without requiring permission), the process would be much faster and more convenient. This need for quick, unrestricted access is why we decided to develop a real-time, instant online chat solution. Our application will allow anyone to create a chat group instantly by generating a join code, enabling participants to join quickly and leave freely, without unnecessary restrictions or permissions required to start talking.
+
 
 # Objective & Key Features
 ## User Authentication
