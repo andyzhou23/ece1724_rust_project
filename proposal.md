@@ -17,7 +17,7 @@
 - **Sign Up**:  
   Create a user with username and password, server will make sure the username is unique.
 - **Sign In**:  
-  Input username and password to authenticate, if success, user will receive a token to authenticate the following actions. Client will automatically send heartbeat to server for online notice and retrive the messages during absence. 
+  Input username and password to authenticate, if success, user will receive a token to authenticate the following actions. Client will automatically send heartbeat messages to server for online notice and retrieve the messages during absence. 
 - **Sign Out**:  
   Inform server the client is down, stop sending and cache new messages
 ## Chat Group Management
@@ -31,7 +31,7 @@
 - **Quitting**:
   - For group member, quitting a group will inform the server to stop forwarding new messages and disable user's message sending.
   - For group owner, quitting means the deletion of this group, the server will perform the quitting action for every members and delete the records and free other resources of this group.
-  - The deletion of chat history on client's side is seperated from quitting the group, which can be later done by users themselves. The actions on chat history at server's side won't be reflected on client's side.
+  - The deletion of chat history on client's side is separated from quitting the group, which can be later done by users themselves. The actions on chat history at server's side won't be reflected on client's side.
 ## Real-time Messaging
 - **Message Structure**:
   - Token
@@ -49,14 +49,14 @@
   - Display and update the messages properly.
 ## Presence Detection
 - Server will maintain a status record of every user, including the timestamp of their last "heartbeat".
-- While the user is logged in, the client will recurrently send a "heartbeat" message to server, that indiacates it's alive.
+- While the user is logged in, the client will recurrently send a "heartbeat" message to server, that indicates it's alive.
 - The client will also explicitly inform the server of its status at signing in and out.
 - The user's status is calculated upon request, determined by whether the time gap between last heartbeat and current time reaches the threshold.
 ## Graphic User Interface
 - **Welcome Page**: Allow user to sign up or sign in.
 - **Main Page**:
   - Group list, shows the groups this user joined.
-  - Chat history, shows the current group's chat history, defaultly the group on top.
+  - Chat history, shows the current group's chat history, default the group on top.
   - Group status, including group id, group members and their status.
   - Group setting, quit button for every one, and a group name setting for group owner.
   - Sign out button.
