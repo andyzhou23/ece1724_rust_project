@@ -1,12 +1,14 @@
 use actix::Actor;
 use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
-use sqlx::sqlite::SqlitePoolOptions;
+
+mod db;
+use db::db_init;
 
 mod user;
 use user::{login, signup};
 
-// mod group;
-// use group::create_group;
+mod group;
+use group::{create_group, join_group, leave_group, list_groups};
 
 mod chat {
     pub mod chat_server;
@@ -22,70 +24,17 @@ async fn index() -> impl Responder {
     HttpResponse::Ok().body("Welcome to the Rust-powered chat server!")
 }
 
+async fn not_found() -> impl Responder {
+    HttpResponse::NotFound().json(serde_json::json!({
+        "error": "Route not found, check the url."
+    }))
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let db_path = "server.db";
-    if !std::path::Path::new(db_path).exists() {
-        std::fs::File::create(db_path).expect("Failed to create database file");
-    }
-
-    let pool = SqlitePoolOptions::new()
-        .max_connections(32)
-        .connect(&format!("sqlite:{}", db_path))
+    let pool = db_init("server.db")
         .await
-        .expect("Failed to connect database");
-
-    sqlx::query(
-        "CREATE TABLE IF NOT EXISTS messages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            group_id INTEGER NOT NULL,
-            user_id INTEGER NOT NULL,
-            content TEXT NOT NULL,
-            created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
-        )",
-    )
-    .execute(&pool)
-    .await
-    .expect("Failed to create messages table");
-
-    sqlx::query(
-        "CREATE TABLE IF NOT EXISTS groups (
-        id INTEGER PRIMARY KEY AUTOINCREMENT, 
-        name TEXT NOT NULL,
-        code TEXT NOT NULL UNIQUE,
-        created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
-    )",
-    )
-    .execute(&pool)
-    .await
-    .expect("Failed to create groups table");
-
-    sqlx::query(
-        "CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL UNIQUE,
-            password TEXT NOT NULL,
-            created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
-        )",
-    )
-    .execute(&pool)
-    .await
-    .expect("Failed to create users table");
-
-    sqlx::query(
-        "CREATE TABLE IF NOT EXISTS group_members (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            group_id INTEGER NOT NULL,
-            user_id INTEGER NOT NULL,
-            created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
-            FOREIGN KEY (group_id) REFERENCES groups(id),
-            FOREIGN KEY (user_id) REFERENCES users(id)
-        )",
-    )
-    .execute(&pool)
-    .await
-    .expect("Failed to create group_members table");
-
+        .expect("Failed to initialize database");
     let chat_server = ChatServer::new(pool.clone()).start();
 
     println!("The server is currently listening on localhost:8080.");
@@ -96,8 +45,12 @@ async fn main() -> std::io::Result<()> {
             .service(index)
             .service(signup)
             .service(login)
-            // .service(create_group)
+            .service(create_group)
+            .service(list_groups)
+            .service(join_group)
+            .service(leave_group)
             .service(ws_connect)
+            .default_service(web::route().to(not_found))
     })
     .bind("0.0.0.0:8080")?
     .run()

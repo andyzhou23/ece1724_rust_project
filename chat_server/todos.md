@@ -49,9 +49,9 @@
     - fn remove_session(user_id: u64)
     - impl Actor for SessionManager
     - impl Handlers for SessionManager
-      - <BroadcastMessage> 
-      - <AddSession> 
-      - <RemoveSession> 
+      - <BroadcastMessage>
+      - <AddSession>
+      - <RemoveSession>
   - WsActor
     - struct WsActor
       - user_id: u64
@@ -76,10 +76,18 @@
     - ws::start(WebSocketActor::new(user_id, session_manager), &req, stream)
 
 ## Http Functions
-- /login
-- /signup
-- /group/create
-- /group/join
-- /group/leave
-- /history
 
+- /login **done**
+- /signup **done**
+- /ws/connect/{user_id} **done**
+- /group/create **done**
+  - name: string
+  - user_id: u64
+- /group/join **done**
+  - user_id: u64
+  - group_code: string
+- /group/leave **done**
+  - user_id: u64
+  - group_id: u64
+- /group/list/{user_id} **done**
+- /history

@@ -3,52 +3,166 @@
 ## API
 
 - `/signup`
-    - POST
-    - Body:
+  - POST
+  - Body:
+
       ```json
       {
         "username": "string",
         "password": "string"
       }
       ```
-    - Response:
+
+  - Response:
+
       ```json
       {
         "id": "integer",
         "username": "string"
       }
       ```
-    - Error responses:
-      - 400 Bad Request: Username already taken
-      - 500 Internal Server Error: Database errors
-    - Test:
-      - curl -w "\n" "http://localhost:8080/signup" --json '{"username":"user1", "password":"123456"}'
 
+  - Error responses:
+    - 400 Bad Request: Username already taken
+    - 500 Internal Server Error: Database errors
+  - Test:
+    - curl -w "\n" "http://localhost:8080/signup" --json '{"username":"user1", "password":"123456"}'
 
 - `/login`
-    - POST
-    - Body:
+  - POST
+  - Body:
+
       ```json
       {
         "username": "string",
         "password": "string"
       }
       ```
-    - Response:
+
+  - Response:
+
       ```json
       {
         "id": "integer",
         "username": "string"
       }
       ```
-    - Error responses:
-      - 400 Bad Request: Username or password incorrect
-      - 500 Internal Server Error: Database errors
-    - Test:
-      - curl -w "\n" "http://localhost:8080/login" --json '{"username":"user1", "password":"123456"}'
- 
-## WebSocket Payload Format 
-- Text: 
+
+  - Error responses:
+    - 400 Bad Request: Username or password incorrect
+    - 500 Internal Server Error: Database errors
+  - Test:
+    - curl -w "\n" "http://localhost:8080/login" --json '{"username":"user1", "password":"123456"}'
+
+- `/group/create`
+  - POST
+  - Body:
+
+    ```json
+    {
+      "name": "string",
+      "user_id": "integer"
+    }
+    ```
+
+  - Response:
+
+    ```json
+    {
+      "group_id": "integer",
+      "group_name": "string",
+      "group_code": "string"
+    }
+    ```
+
+  - Error responses:
+    - 500 Internal Server Error: Database errors
+  - Test:
+    - curl -w "\n" "http://localhost:8080/group/create" --json '{"name":"group1", "user_id":1}'
+
+- `/group/list/{user_id}`
+  - GET
+  - Path:
+    - user_id: integer
+  - Response:
+
+    ```json
+    [
+      {
+        "id": "integer",
+        "name": "string",
+        "code": "string", 
+        "created_at": "integer",
+        "members": [
+          {
+            "id": "integer",
+            "name": "string"
+          }
+        ]
+      }
+    ]
+    ```
+
+  - Error responses:
+    - 500 Internal Server Error: Database errors
+  - Test:
+    - curl -w "\n" "http://localhost:8080/group/list/1"
+
+- `/group/join`
+  - POST
+  - Request:
+
+    ```json
+    {
+      "user_id": "integer",
+      "group_code": "string"
+    }
+    ```
+
+  - Response:
+
+    ```json
+    {
+      "group_id": "integer", 
+      "group_name": "string",
+      "group_code": "string"
+    }
+    ```
+
+  - Error responses:
+    - 400 Bad Request: Invalid group code or user already in group
+    - 500 Internal Server Error: Database errors
+  - Test:
+    - curl -w "\n" "http://localhost:8080/group/join" --json '{"user_id":1, "group_code":"FILL_THIS_PART_IN_TEST"}'
+
+- `/group/leave`
+  - POST
+  - Request:
+
+    ```json
+    {
+      "user_id": "integer",
+      "group_id": "integer"
+    }
+    ```
+
+  - Response:
+
+    ```json
+    {
+      "message": "string"
+    }
+    ```
+
+  - Error responses:
+    - 400 Bad Request: User is not a member of group
+    - 500 Internal Server Error: Database errors
+  - Test:
+    - curl -w "\n" "http://localhost:8080/group/leave" --json '{"user_id":1, "group_id":1}'
+
+## WebSocket Payload Format
+
+- Text:
   - ClientMessageJson (client -> server)
     - group_id: integer
     - content: string
