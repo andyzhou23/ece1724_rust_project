@@ -5,8 +5,14 @@ use sqlx::sqlite::SqlitePoolOptions;
 mod auth;
 use auth::{login, signup};
 
-mod chat;
-use chat::{ws_connect, ChatServer};
+mod chat {
+    pub mod chat_server;
+    pub mod connection_actor;
+    pub mod messages;
+    pub mod routes;
+}
+
+use chat::{chat_server::ChatServer, routes::ws_connect};
 
 #[get("/")]
 async fn index() -> impl Responder {
