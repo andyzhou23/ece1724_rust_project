@@ -74,15 +74,51 @@ impl Handler<ClientMessage> for ChatServer {
     type Result = ();
 
     fn handle(&mut self, msg: ClientMessage, _: &mut Context<Self>) {
-        // todo: broad cast message to all connected clients in group
-        for (_, session) in self.sessions.iter_mut() {
-            session.addr.do_send(BroadcastMessage {
-                msg_id: 0,
-                sender_id: msg.user_id,
-                group_id: msg.group_id,
-                content: msg.content.clone(),
-                created_at: 0,
-            });
+        // Save message to database
+        let insert_result = futures::executor::block_on(
+            sqlx::query("INSERT INTO messages (group_id, user_id, content) VALUES (?, ?, ?) RETURNING id, created_at")
+                .bind(msg.group_id as i64)
+                .bind(msg.user_id as i64)
+                .bind(&msg.content)
+                .fetch_one(&self.pool),
+        );
+
+        let (msg_id, created_at) = match insert_result {
+            Ok(result) => (
+                result.get::<i64, _>("id") as usize,
+                result.get::<i64, _>("created_at") as u64,
+            ),
+            Err(e) => {
+                println!("Failed to save message: {}", e);
+                return;
+            }
+        };
+
+        // Get users in the same group
+        let target_users = match futures::executor::block_on(
+            sqlx::query("SELECT user_id FROM group_members WHERE group_id = ?")
+                .bind(msg.group_id as i64)
+                .fetch_all(&self.pool),
+        ) {
+            Ok(users) => users,
+            Err(e) => {
+                println!("Failed to get group members: {}", e);
+                return;
+            }
+        };
+
+        // Only broadcast to users in the same group
+        for row in target_users {
+            let target_user_id: i64 = row.get("user_id");
+            if let Some(session) = self.sessions.get(&(target_user_id as usize)) {
+                session.addr.do_send(BroadcastMessage {
+                    msg_id,
+                    sender_id: msg.user_id,
+                    group_id: msg.group_id,
+                    content: msg.content.clone(),
+                    created_at,
+                });
+            }
         }
     }
 }
