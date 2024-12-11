@@ -29,7 +29,7 @@ pub async fn db_init(db_path: &str) -> Result<Pool<Sqlite>, sqlx::Error> {
         "CREATE TABLE IF NOT EXISTS groups (
         id INTEGER PRIMARY KEY AUTOINCREMENT, 
         name TEXT NOT NULL,
-        code TEXT NOT NULL UNIQUE,
+        code TEXT NOT NULL UNIQUE COLLATE NOCASE,
         created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
     )",
     )
