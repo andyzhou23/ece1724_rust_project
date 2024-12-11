@@ -4,8 +4,8 @@ use sqlx::sqlite::SqlitePoolOptions;
 mod auth;
 use auth::{login, signup};
 
-mod ws;
-use ws::{ws_connect, ws_test, ChatServer};
+mod chat;
+use chat::{ws_connect, ws_test, ChatServer};
 #[get("/")]
 async fn index() -> impl Responder {
     HttpResponse::Ok().body("Welcome to the Rust-powered chat server!")
