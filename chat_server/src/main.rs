@@ -5,7 +5,7 @@ mod auth;
 use auth::{login, signup};
 
 mod ws;
-
+use ws::{ws_connect, ws_test, ChatServer};
 #[get("/")]
 async fn index() -> impl Responder {
     HttpResponse::Ok().body("Welcome to the Rust-powered chat server!")
@@ -75,13 +75,18 @@ async fn main() -> std::io::Result<()> {
     .await
     .expect("Failed to create group_members table");
 
+    let chat_server = ChatServer::new(pool.clone());
+
     println!("The server is currently listening on localhost:8080.");
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(pool.clone()))
+            .app_data(web::Data::new(chat_server.clone()))
             .service(index)
             .service(signup)
             .service(login)
+            .service(ws_connect)
+            .service(ws_test)
     })
     .bind("0.0.0.0:8080")?
     .run()

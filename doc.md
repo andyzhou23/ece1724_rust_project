@@ -46,3 +46,21 @@
       - 500 Internal Server Error: Database errors
     - Test:
       - curl -w "\n" "http://localhost:8080/login" --json '{"username":"user1", "password":"123456"}'
+ 
+ ## WebSocket Payload Format
+- Text: 
+  - client -> server
+    - user_id: integer
+    - group_id: integer
+    - content: string
+  - server -> client
+    - msg_id: integer
+    - user_id: integer
+    - group_id: integer
+    - content: string
+    - created_at: integer (Unix timestamp in seconds) 
+- Ping:
+  - Anything
+  - server will respond the same message
+- Close:
+  - Anything
