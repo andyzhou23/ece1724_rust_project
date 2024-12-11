@@ -160,10 +160,48 @@
   - Test:
     - curl -w "\n" "http://localhost:8080/group/leave" --json '{"user_id":1, "group_id":1}'
 
+- `/history`
+  - GET
+  - Request:
+
+    ```json
+    {
+      "user_id": "integer",
+      "entries": [
+        {
+          "group_id": "integer",
+          "latest_msg_id": "integer"
+        }
+      ]
+    }
+    ```
+
+  - Response:
+
+    ```json
+    {
+      "group_id": [
+        {
+          "msg_id": "integer",
+          "group_id": "integer",
+          "sender_id": "integer",
+          "content": "string",
+          "created_at": "integer"
+        }
+      ]
+    }
+    ```
+
+  - Error responses:
+    - 500 Internal Server Error: Database errors
+    - If user is not a member of group, its key will be missing in the response
+  - Test:
+    - curl -w "\n" "http://localhost:8080/history" --json '{"user_id":1, "entries":[{"group_id":1, "latest_msg_id":5}]}'
+
 ## WebSocket Payload Format
 
 - Text:
-  - ClientMessageJson (client -> server)
+  - ClientMessageJson (client -> server) // {"group_id":1,"content":"hello world"}
     - group_id: integer
     - content: string
   - BroadcastMessage (server -> client)

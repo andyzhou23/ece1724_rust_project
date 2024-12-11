@@ -5,7 +5,7 @@ mod db;
 use db::db_init;
 
 mod user;
-use user::{login, signup};
+use user::{get_history, login, signup};
 
 mod group;
 use group::{create_group, join_group, leave_group, list_groups};
@@ -45,6 +45,7 @@ async fn main() -> std::io::Result<()> {
             .service(index)
             .service(signup)
             .service(login)
+            .service(get_history)
             .service(create_group)
             .service(list_groups)
             .service(join_group)
