@@ -1,8 +1,10 @@
 // actor messages
 
 use actix::prelude::*;
+use actix::ActorFutureExt;
 use actix_web::{get, web, Error, HttpRequest, HttpResponse};
 use actix_web_actors::ws;
+use futures;
 use serde::Deserialize;
 use serde_json::{self, json};
 use sqlx::{Pool, Row, Sqlite};
@@ -77,7 +79,7 @@ impl Actor for ConnectionActor {
     }
 }
 
-#[derive(Message, Deserialize)]
+#[derive(Message)]
 #[rtype(result = "()")]
 struct ClientMessage {
     user_id: usize,
@@ -168,17 +170,26 @@ impl ChatServer {
         }
     }
 
-    async fn add_session(&mut self, addr: Addr<ConnectionActor>, user_id: usize) {
-        let user_entry = match sqlx::query("SELECT name FROM users WHERE id = ?")
-            .bind(user_id as i64)
-            .fetch_optional(&self.pool)
-            .await
-        {
+    fn add_session(&mut self, addr: Addr<ConnectionActor>, user_id: usize) {
+        let user_entry = match futures::executor::block_on(
+            sqlx::query("SELECT name FROM users WHERE id = ?")
+                .bind(user_id as i64)
+                .fetch_optional(&self.pool),
+        ) {
             Ok(user) => user,
-            Err(_) => return,
+            Err(e) => {
+                println!("{}", e);
+                return;
+            }
         };
 
-        let username = user_entry.unwrap().get("name");
+        let username = match user_entry {
+            Some(entry) => entry.get("name"),
+            None => {
+                println!("User {} not found", user_id);
+                return;
+            }
+        };
 
         self.sessions.insert(
             user_id,
@@ -220,16 +231,10 @@ impl Handler<ClientMessage> for ChatServer {
 impl Handler<AddSession> for ChatServer {
     type Result = ();
 
-    fn handle(&mut self, msg: AddSession, ctx: &mut Context<Self>) {
+    fn handle(&mut self, msg: AddSession, _: &mut Context<Self>) {
         let addr = msg.addr;
         let user_id = msg.user_id;
-        let addr_clone = addr.clone();
-        let user_id_clone = user_id;
-        let mut self_clone = self.clone();
-
-        actix::spawn(async move {
-            self_clone.add_session(addr_clone, user_id_clone).await;
-        });
+        self.add_session(addr, user_id);
     }
 }
 
@@ -241,19 +246,15 @@ impl Handler<RemoveSession> for ChatServer {
     }
 }
 
-#[get("/ws/connect")]
+#[get("/ws/connect/{user_id}")]
 pub async fn ws_connect(
-    // ws://localhost:8080/ws/connect
     req: HttpRequest,
     stream: web::Payload,
-    // user_id: web::Query<usize>,
-    // pool: web::Data<Pool<Sqlite>>,
+    user_id: web::Path<usize>,
     chat_server: web::Data<Addr<ChatServer>>,
 ) -> Result<HttpResponse, Error> {
-    println!("ws_connect");
     // todo credential check
-    // let user_id = user_id.into_inner();
-    let user_id = 1;
+    let user_id = user_id.into_inner();
     ws::start(
         ConnectionActor::new(chat_server.get_ref().clone(), user_id),
         &req,
