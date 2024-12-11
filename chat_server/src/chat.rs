@@ -85,14 +85,26 @@ struct ClientMessage {
     content: String,
 }
 
+#[derive(Deserialize)]
+struct ClientMessageJson {
+    group_id: usize,
+    content: String,
+}
+
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ConnectionActor {
     // handle message from client
     fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
         match msg {
             Ok(ws::Message::Text(text)) => {
-                let payload: ClientMessage = serde_json::from_str(&text).unwrap();
+                let payload: ClientMessageJson = match serde_json::from_str(&text) {
+                    Ok(payload) => payload,
+                    Err(_) => ClientMessageJson {
+                        group_id: 0,
+                        content: "RawText: ".to_string() + &text.to_string(),
+                    },
+                };
                 self.chat_server.do_send(ClientMessage {
-                    user_id: payload.user_id,
+                    user_id: self.user_id,
                     group_id: payload.group_id,
                     content: payload.content,
                 });
