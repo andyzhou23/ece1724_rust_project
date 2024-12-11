@@ -47,18 +47,18 @@
     - Test:
       - curl -w "\n" "http://localhost:8080/login" --json '{"username":"user1", "password":"123456"}'
  
- ## WebSocket Payload Format
+## WebSocket Payload Format 
 - Text: 
-  - client -> server
-    - user_id: integer
+  - ClientMessageJson (client -> server)
     - group_id: integer
     - content: string
-  - server -> client
+  - BroadcastMessage (server -> client)
     - msg_id: integer
-    - user_id: integer
+    - sender_id: integer
     - group_id: integer
     - content: string
-    - created_at: integer (Unix timestamp in seconds) 
+    - created_at: integer (Unix timestamp in seconds)
+  - if not json, server will build one with group_id=0
 - Ping:
   - Anything
   - server will respond the same message

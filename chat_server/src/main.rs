@@ -1,11 +1,22 @@
+use actix::Actor;
 use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
 use sqlx::sqlite::SqlitePoolOptions;
 
-mod auth;
-use auth::{login, signup};
+mod user;
+use user::{login, signup};
 
-mod ws;
-use ws::{ws_connect, ws_test, ChatServer};
+// mod group;
+// use group::create_group;
+
+mod chat {
+    pub mod chat_server;
+    pub mod connection_actor;
+    pub mod messages;
+    pub mod routes;
+}
+
+use chat::{chat_server::ChatServer, routes::ws_connect};
+
 #[get("/")]
 async fn index() -> impl Responder {
     HttpResponse::Ok().body("Welcome to the Rust-powered chat server!")
@@ -75,7 +86,7 @@ async fn main() -> std::io::Result<()> {
     .await
     .expect("Failed to create group_members table");
 
-    let chat_server = ChatServer::new(pool.clone());
+    let chat_server = ChatServer::new(pool.clone()).start();
 
     println!("The server is currently listening on localhost:8080.");
     HttpServer::new(move || {
@@ -85,8 +96,8 @@ async fn main() -> std::io::Result<()> {
             .service(index)
             .service(signup)
             .service(login)
+            // .service(create_group)
             .service(ws_connect)
-            .service(ws_test)
     })
     .bind("0.0.0.0:8080")?
     .run()

@@ -2,7 +2,7 @@
 
 ## Server
 
-- Database
+- Database **done**
   - Messages
     - id: auto increment u64
     - group_id: u64
@@ -25,7 +25,7 @@
     - user_id: foreign key to Users.id
     - created_at: timestamp
 
-- Chat Server Context
+- Chat Server Context **done**
   - actor messages (all from ws actor to session manager, handler impl in session manager)
     - BroadcastMessage
       - user_id: u64
@@ -74,4 +74,12 @@
   - WsActor Creator
     - GET /ws
     - ws::start(WebSocketActor::new(user_id, session_manager), &req, stream)
+
+## Http Functions
+- /login
+- /signup
+- /group/create
+- /group/join
+- /group/leave
+- /history
 
