@@ -3,7 +3,6 @@ use crate::chat::messages::{AddSession, BroadcastMessage, ClientMessage, RemoveS
 use actix::prelude::*;
 use actix_web_actors::ws;
 use serde::Deserialize;
-use serde_json::{self, json};
 use std::time::{Duration, Instant};
 
 pub struct ConnectionActor {
@@ -23,7 +22,7 @@ impl ConnectionActor {
 
     fn start_heartbeat(&self, ctx: &mut ws::WebsocketContext<Self>) {
         ctx.run_interval(Duration::from_secs(5), |actor, ctx| {
-            if Instant::now().duration_since(actor.last_active_at) > Duration::from_secs(10) {
+            if Instant::now().duration_since(actor.last_active_at) > Duration::from_secs(1000) {
                 ctx.stop(); // todo: config heartbeat timeout
             }
         });

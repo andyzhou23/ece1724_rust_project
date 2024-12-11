@@ -17,6 +17,7 @@ pub struct RemoveSession {
 
 #[derive(Message)]
 #[rtype(result = "()")]
+#[derive(Serialize)]
 pub struct ClientMessage {
     pub user_id: usize,
     pub group_id: usize,
