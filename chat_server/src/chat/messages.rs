@@ -1,4 +1,5 @@
 use actix::prelude::*;
+use serde::Serialize;
 // Actor Messages
 use crate::chat::connection_actor::ConnectionActor;
 #[derive(Message)]
@@ -24,6 +25,7 @@ pub struct ClientMessage {
 
 #[derive(Message)]
 #[rtype(result = "()")]
+#[derive(Serialize)]
 pub struct BroadcastMessage {
     pub msg_id: usize,
     pub sender_id: usize,

@@ -2,8 +2,11 @@ use actix::Actor;
 use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
 use sqlx::sqlite::SqlitePoolOptions;
 
-mod auth;
-use auth::{login, signup};
+mod user;
+use user::{login, signup};
+
+// mod group;
+// use group::create_group;
 
 mod chat {
     pub mod chat_server;
@@ -93,6 +96,7 @@ async fn main() -> std::io::Result<()> {
             .service(index)
             .service(signup)
             .service(login)
+            // .service(create_group)
             .service(ws_connect)
     })
     .bind("0.0.0.0:8080")?

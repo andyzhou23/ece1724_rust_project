@@ -69,19 +69,19 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ConnectionActor {
     fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
         match msg {
             Ok(ws::Message::Text(text)) => {
-                let payload: ClientMessageJson = match serde_json::from_str(&text) {
-                    Ok(payload) => payload,
-                    Err(_) => ClientMessageJson {
-                        group_id: 0,
-                        content: "RawText: ".to_string() + &text.to_string(),
-                    },
+                match serde_json::from_str::<ClientMessageJson>(&text) {
+                    Ok(payload) => {
+                        self.chat_server.do_send(ClientMessage {
+                            user_id: self.user_id,
+                            group_id: payload.group_id,
+                            content: payload.content,
+                        });
+                        self.last_active_at = Instant::now();
+                    }
+                    Err(_) => {
+                        ctx.text("RawText: ".to_string() + &text);
+                    }
                 };
-                self.chat_server.do_send(ClientMessage {
-                    user_id: self.user_id,
-                    group_id: payload.group_id,
-                    content: payload.content,
-                });
-                self.last_active_at = Instant::now();
             }
             Ok(ws::Message::Ping(msg)) => {
                 self.last_active_at = Instant::now();
@@ -97,13 +97,6 @@ impl Handler<BroadcastMessage> for ConnectionActor {
     type Result = ();
 
     fn handle(&mut self, msg: BroadcastMessage, ctx: &mut Self::Context) {
-        let payload = json!({
-            "msg_id": msg.msg_id,
-            "sender_id": msg.sender_id,
-            "group_id": msg.group_id,
-            "content": msg.content,
-            "created_at": msg.created_at
-        });
-        ctx.text(payload.to_string());
+        ctx.text(serde_json::to_string(&msg).unwrap());
     }
 }
