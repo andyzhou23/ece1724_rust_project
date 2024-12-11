@@ -1,5 +1,3 @@
-// actor messages
-
 use actix::prelude::*;
 use actix::ActorFutureExt;
 use actix_web::{get, web, Error, HttpRequest, HttpResponse};
@@ -43,7 +41,7 @@ impl ConnectionActor {
 
     fn start_heartbeat(&self, ctx: &mut ws::WebsocketContext<Self>) {
         ctx.run_interval(Duration::from_secs(5), |actor, ctx| {
-            if Instant::now().duration_since(actor.last_active_at) > Duration::from_secs(100000) {
+            if Instant::now().duration_since(actor.last_active_at) > Duration::from_secs(10) {
                 ctx.stop(); // todo: config heartbeat timeout
             }
         });
@@ -62,7 +60,7 @@ impl Actor for ConnectionActor {
                 addr: ctx.address(),
             })
             .into_actor(self)
-            .then(|res, actor, _ctx| {
+            .then(|res, _actor, _ctx| {
                 match res {
                     Ok(_) => (),
                     _ => println!("Failed to add session"),
@@ -110,6 +108,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ConnectionActor {
                     group_id: payload.group_id,
                     content: payload.content,
                 });
+                self.last_active_at = Instant::now();
             }
             Ok(ws::Message::Ping(msg)) => {
                 self.last_active_at = Instant::now();
@@ -124,7 +123,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ConnectionActor {
 #[rtype(result = "()")]
 struct BroadcastMessage {
     msg_id: usize,
-    user_id: usize,
+    sender_id: usize,
     group_id: usize,
     content: String,
     created_at: u64,
@@ -137,7 +136,7 @@ impl Handler<BroadcastMessage> for ConnectionActor {
     fn handle(&mut self, msg: BroadcastMessage, ctx: &mut Self::Context) {
         let payload = json!({
             "msg_id": msg.msg_id,
-            "user_id": msg.user_id,
+            "sender_id": msg.sender_id,
             "group_id": msg.group_id,
             "content": msg.content,
             "created_at": msg.created_at
@@ -219,7 +218,7 @@ impl Handler<ClientMessage> for ChatServer {
         for (_, session) in self.sessions.iter_mut() {
             session.addr.do_send(BroadcastMessage {
                 msg_id: 0,
-                user_id: msg.user_id,
+                sender_id: msg.user_id,
                 group_id: msg.group_id,
                 content: msg.content.clone(),
                 created_at: 0,
