@@ -1,6 +1,6 @@
 use actix::Actor;
 use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
-
+use clap;
 mod db;
 use db::db_init;
 
@@ -32,7 +32,20 @@ async fn not_found() -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let pool = db_init("server.db")
+    let arg_matches = clap::Command::new("chat_server")
+        .arg(
+            clap::Arg::new("dbpath")
+                .long("dbpath")
+                .short('d')
+                .value_name("FILE")
+                .help("Sets the database file path")
+                .default_value("server.db"),
+        )
+        .get_matches();
+
+    let dbpath = arg_matches.get_one::<String>("dbpath").unwrap();
+
+    let pool = db_init(dbpath)
         .await
         .expect("Failed to initialize database");
     let chat_server = ChatServer::new(pool.clone()).start();
