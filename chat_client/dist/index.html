@@ -1,13 +1,17 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <title>Chat Client</title>
-    <link rel="stylesheet" href="/style-15a95182dac5fef2.css" integrity="sha384&#x2D;NTeTinBSPbHjKe6umbNG&#x2B;rsLqrML&#x2B;x04RfJO&#x2F;63MdEQm6r4jFYMHKnp7&#x2F;Rox5h2t"/>
-    
-<script type="module" nonce="yR76rHUk8288U7KidpPcAA==">
-import init, * as bindings from '/chat_client-29c48dc9db7a7231.js';
-const wasm = await init({ module_or_path: '/chat_client-29c48dc9db7a7231_bg.wasm' });
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yew Webpage</title>
+<link rel="modulepreload" href="/yew-counter-5e3798c396326ed.js" crossorigin=anonymous integrity="sha384-rOou+5a7mn+IxZ77MO1+GIvrS3WyNPmMRWo5VbZxwArirO7gcXADn/5YZ/bWAke4"><link rel="preload" href="/yew-counter-5e3798c396326ed_bg.wasm" crossorigin=anonymous integrity="sha384-qCj+0E6pNAYe/5h876D2jiMez2hKMPRojuDYLZdP1HbmHGgCnJlO2jRVklhRDsTT" as="fetch" type="application/wasm"></head>
+<body>
+    <div id="root"></div>
+    <script type="module" src="main.js"></script>
+
+<script type="module" nonce="bZ1mIYft9z4D63Ie1k5Rug==">
+import init, * as bindings from '/yew-counter-5e3798c396326ed.js';
+const wasm = await init({ module_or_path: '/yew-counter-5e3798c396326ed_bg.wasm' });
 
 
 window.wasmBindings = bindings;
@@ -15,11 +19,7 @@ window.wasmBindings = bindings;
 
 dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
 
-</script>
-  <link rel="modulepreload" href="/chat_client-29c48dc9db7a7231.js" crossorigin=anonymous integrity="sha384-hCpZK2E5kZDdMVdTszNX3B3AOdkd3zQJqFwcZmCIh0nyrpxD+B1+8huzRaNW64+A"><link rel="preload" href="/chat_client-29c48dc9db7a7231_bg.wasm" crossorigin=anonymous integrity="sha384-0P+1G1n4KD9yKMa/HPrSeZcP1tWkaSYnut4z15Fw553cRTFI1S5Ys8D4UHioqhvm" as="fetch" type="application/wasm"></head>
-  <body>
-    <div id="app"></div>
-  <script>"use strict";
+</script><script>"use strict";
 
 (function () {
 
@@ -150,3 +150,4 @@ dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
 })()
 </script></body>
 </html>
+

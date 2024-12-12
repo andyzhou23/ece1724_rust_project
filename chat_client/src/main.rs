@@ -1,4 +1,4 @@
-mod main_view;
+mod view;
 
 use std::collections::HashMap;
 use yew::prelude::*;
@@ -25,12 +25,16 @@ struct ChatApp {
     selected_group: Option<usize>,
     current_page: Page,
     error_message: Option<String>,
+    logged_in: bool, // New field to track login state
+    registered_users: HashMap<String, String>,
 }
 
-#[derive(Debug)] // Add this derive attribute
+#[derive(Debug, PartialEq)]
 enum Page {
+    LoginPage,
     MainPage,
     NewGroupPage,
+    RegistrationPage,
 }
 
 enum ChatAppMsg {
@@ -39,6 +43,9 @@ enum ChatAppMsg {
     DeleteGroup(String),
     SelectGroup(usize),
     SendMessage(String),
+    Login(String, String), 
+    Logout,
+    Register(String, String),
 }
 
 impl Component for ChatApp {
@@ -49,9 +56,11 @@ impl Component for ChatApp {
         Self {
             groups: vec![],
             join_codes: HashMap::new(),
+            registered_users: HashMap::new(),
             selected_group: None,
-            current_page: Page::MainPage,
+            current_page: Page::LoginPage, // Start with LoginPage
             error_message: None,
+            logged_in: false,
         }
     }
 
@@ -140,13 +149,51 @@ impl Component for ChatApp {
                 }
                 true
             }
+            ChatAppMsg::Login(username, password) => {
+                // Ensure username and password match the stored data
+                match self.registered_users.get(&username) {
+                    Some(stored_password) if stored_password == &password => {
+                        self.logged_in = true;
+                        self.current_page = Page::MainPage; // Navigate to MainPage
+                        self.error_message = None;
+                    }
+                    Some(_) => {
+                        self.error_message = Some("Incorrect password.".to_string());
+                    }
+                    None => {
+                        self.error_message = Some("Username not found.".to_string());
+                    }
+                }
+                true
+            }
+            ChatAppMsg::Register(username, password) => {
+                if self.registered_users.contains_key(&username) {
+                    self.error_message = Some("Username already exists.".to_string());
+                } else if username.trim().is_empty() || password.trim().is_empty() {
+                    self.error_message = Some("Username and password cannot be empty.".to_string());
+                } else {
+                    self.registered_users.insert(username, password);
+                    self.error_message = None;
+                    self.current_page = Page::LoginPage; // Navigate to LoginPage
+                }
+                true
+            }
+            ChatAppMsg::Logout => {
+                self.logged_in = false;
+                self.current_page = Page::LoginPage;
+                self.error_message = None;
+                true
+            }
+        
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         match self.current_page {
-            Page::MainPage => main_view::render_main_page(self, ctx),
-            Page::NewGroupPage => main_view::render_new_group_page(self, ctx),
+            Page::LoginPage => view::render_login_page(self, ctx),
+            Page::MainPage => view::render_main_page(self, ctx),
+            Page::NewGroupPage => view::render_new_group_page(self, ctx),
+            Page::RegistrationPage => view::render_registration_page(self, ctx),
         }
     }
 }
