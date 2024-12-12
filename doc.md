@@ -54,6 +54,15 @@
   - Test:
     - curl -w "\n" "http://localhost:8080/login" --json '{"username":"user1", "password":"123456"}'
 
+- `/ws/connect/{user_id}`
+  - GET
+  - Path:
+    - user_id: integer
+  - Response:
+    - WebSocket connection
+  - Error responses:
+    - 400 Bad Request: User not found
+
 - `/group/create`
   - POST
   - Body:
