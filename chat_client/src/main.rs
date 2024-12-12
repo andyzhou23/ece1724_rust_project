@@ -1,4 +1,4 @@
-mod main_logic;
+mod main_view;
 
 use std::collections::HashMap;
 use yew::prelude::*;
@@ -145,8 +145,8 @@ impl Component for ChatApp {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         match self.current_page {
-            Page::MainPage => main_logic::render_main_page(self, ctx),
-            Page::NewGroupPage => main_logic::render_new_group_page(self, ctx),
+            Page::MainPage => main_view::render_main_page(self, ctx),
+            Page::NewGroupPage => main_view::render_new_group_page(self, ctx),
         }
     }
 }
