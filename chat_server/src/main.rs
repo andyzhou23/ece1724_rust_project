@@ -3,6 +3,7 @@ use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
 use clap;
 mod db;
 use db::db_init;
+use actix_cors::Cors;
 
 mod user;
 use user::{get_history, login, signup};
@@ -50,9 +51,10 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to initialize database");
     let chat_server = ChatServer::new(pool.clone()).start();
 
-    println!("The server is currently listening on localhost:8080.");
+    println!("The server is currently listening on localhost:8081.");
     HttpServer::new(move || {
         App::new()
+        .wrap(Cors::default().allow_any_origin().allow_any_method().allow_any_header())
             .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(chat_server.clone()))
             .service(index)
@@ -66,7 +68,7 @@ async fn main() -> std::io::Result<()> {
             .service(ws_connect)
             .default_service(web::route().to(not_found))
     })
-    .bind("0.0.0.0:8080")?
+    .bind("0.0.0.0:8081")?
     .run()
     .await
 }

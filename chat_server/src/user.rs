@@ -15,6 +15,7 @@ async fn signup(
     signup_data: web::Json<UserCredentials>,
 ) -> Result<HttpResponse> {
     // Check if username already exists
+    println!("Checking username availability for: {}", signup_data.username);
     let existing_user = match sqlx::query("SELECT id FROM users WHERE name = ?")
         .bind(&signup_data.username)
         .fetch_optional(pool.get_ref())

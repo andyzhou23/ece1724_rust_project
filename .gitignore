@@ -1,6 +1,7 @@
 */target/
 
 # Added by cargo
+*.db
 
 /target
 Cargo.lock

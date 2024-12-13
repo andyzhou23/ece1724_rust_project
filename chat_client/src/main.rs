@@ -1,5 +1,5 @@
 mod view;
-
+//use reqwasm::http::Request;
 use std::collections::HashMap;
 use yew::prelude::*;
 
@@ -45,7 +45,8 @@ enum ChatAppMsg {
     SendMessage(String),
     Login(String, String), 
     Logout,
-    Register(String, String),
+    Register(String, String), // Registration with username and password
+    RegisterResponse(Result<String, String>), // Handle API response
 }
 
 impl Component for ChatApp {
@@ -64,7 +65,7 @@ impl Component for ChatApp {
         }
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             ChatAppMsg::NavigateTo(page) => {
                 self.current_page = page;
@@ -167,14 +168,73 @@ impl Component for ChatApp {
                 true
             }
             ChatAppMsg::Register(username, password) => {
-                if self.registered_users.contains_key(&username) {
-                    self.error_message = Some("Username already exists.".to_string());
-                } else if username.trim().is_empty() || password.trim().is_empty() {
-                    self.error_message = Some("Username and password cannot be empty.".to_string());
-                } else {
-                    self.registered_users.insert(username, password);
-                    self.error_message = None;
-                    self.current_page = Page::LoginPage; // Navigate to LoginPage
+                let link = ctx.link().clone();
+    
+                // Create the JSON body
+                let body = serde_json::json!({ "username": username, "password": password }).to_string();
+    
+                // Send the HTTP request
+                let request = reqwasm::http::Request::post("http://localhost:8081/signup")
+                    .header("Content-Type", "application/json")
+                    .body(body)
+                    .send();
+    
+                // Handle the HTTP response
+                wasm_bindgen_futures::spawn_local(async move {
+                    match request.await {
+                        Ok(response) => {
+                            // Log the status code and status text
+                            log::info!("Response status: {} - {}", response.status(), response.status_text());
+                            
+                            if response.status() == 200 {
+                                match response.json::<serde_json::Value>().await {
+                                    Ok(json) => {
+                                        let username = json["username"].as_str().unwrap_or_default().to_string();
+                                        link.send_message(ChatAppMsg::RegisterResponse(Ok(username)));
+                                    }
+                                    Err(_) => {
+                                        link.send_message(ChatAppMsg::RegisterResponse(Err("Invalid server response.".to_string())));
+                                    }
+                                }
+                            } else {
+                                // Get error message from response body
+                                match response.text().await {
+                                    Ok(text) => {
+                                        log::error!("Server error response: {}", text);
+                                        if response.status() == 400 {
+                                            link.send_message(ChatAppMsg::RegisterResponse(Err("Username already taken.".to_string())));
+                                        } else if response.status() == 500 {
+                                            link.send_message(ChatAppMsg::RegisterResponse(Err("Database error.".to_string())));
+                                        } else {
+                                            link.send_message(ChatAppMsg::RegisterResponse(Err("Unknown error.".to_string())));
+                                        }
+                                    }
+                                    Err(e) => {
+                                        log::error!("Failed to read error response: {}", e);
+                                        link.send_message(ChatAppMsg::RegisterResponse(Err("Failed to read error response".to_string())));
+                                    }
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            link.send_message(ChatAppMsg::RegisterResponse(Err(format!("Network error: {}", e))));
+                        }
+                    }
+                });
+    
+                self.error_message = None;
+                true
+            }
+            ChatAppMsg::RegisterResponse(result) => {
+                match result {
+                    Ok(username) => {
+                        self.error_message = None;
+                        log::info!("Successfully registered: {}", username);
+                        self.current_page = Page::LoginPage;
+                    }
+                    Err(err) => {
+                        self.error_message = Some(err);
+                    }
                 }
                 true
             }
