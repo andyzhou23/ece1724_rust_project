@@ -175,24 +175,43 @@ impl Component for ChatApp {
                                 // Parse the response JSON
                                 match response.json::<serde_json::Value>().await {
                                     Ok(json) => {
-                                        let id = json["id"].as_i64().unwrap_or_default().to_string();
-                                        let username = json["username"].as_str().unwrap_or_default().to_string();
-                                        link.send_message(ChatAppMsg::LoginResponse(Ok((id, username))));
+                                        log::info!("Received JSON response: {:?}", json);
+                                        match (json["id"].as_i64(), json["username"].as_str()) {
+                                            (Some(id), Some(username)) => {
+                                                link.send_message(ChatAppMsg::LoginResponse(Ok((id.to_string(), username.to_string()))));
+                                            }
+                                            _ => {
+                                                let error_msg = format!("Invalid JSON structure. Received: {:?}", json);
+                                                log::error!("{}", error_msg);
+                                                link.send_message(ChatAppMsg::LoginResponse(Err(error_msg)));
+                                            }
+                                        }
                                     }
-                                    Err(_) => {
-                                        link.send_message(ChatAppMsg::LoginResponse(Err("Invalid server response.".to_string())));
+                                    Err(e) => {
+                                        let error_msg = format!("JSON parsing error: {:?}", e);
+                                        log::error!("{}", error_msg);
+                                        link.send_message(ChatAppMsg::LoginResponse(Err(error_msg)));
                                     }
                                 }
-                            } else if response.status() == 400 {
-                                link.send_message(ChatAppMsg::LoginResponse(Err("Username or password incorrect.".to_string())));
-                            } else if response.status() == 500 {
-                                link.send_message(ChatAppMsg::LoginResponse(Err("Internal server error.".to_string())));
                             } else {
-                                link.send_message(ChatAppMsg::LoginResponse(Err("Unknown error.".to_string())));
+                                // Get the actual error message from the response
+                                match response.text().await {
+                                    Ok(error_text) => {
+                                        log::error!("Error: {}", error_text);
+                                        link.send_message(ChatAppMsg::LoginResponse(Err(error_text)));
+                                    }
+                                    Err(e) => {
+                                        let error_msg = format!("Failed to read error response: {}", e);
+                                        log::error!("{}", error_msg);
+                                        link.send_message(ChatAppMsg::LoginResponse(Err(error_msg)));
+                                    }
+                                }
                             }
                         }
                         Err(e) => {
-                            link.send_message(ChatAppMsg::LoginResponse(Err(format!("Network error: {}", e))));
+                            let error_msg = format!("Network error: {}", e);
+                            log::error!("{}", error_msg);
+                            link.send_message(ChatAppMsg::LoginResponse(Err(error_msg)));
                         }
                     }
                 });
@@ -217,62 +236,62 @@ impl Component for ChatApp {
             
             ChatAppMsg::Register(username, password) => {
                 let link = ctx.link().clone();
-    
+            
                 // Create the JSON body
                 let body = serde_json::json!({ "username": username, "password": password }).to_string();
-    
+            
                 // Send the HTTP request
                 let request = reqwasm::http::Request::post("http://localhost:8081/signup")
                     .header("Content-Type", "application/json")
                     .body(body)
                     .send();
-    
+            
                 // Handle the HTTP response
                 wasm_bindgen_futures::spawn_local(async move {
                     match request.await {
                         Ok(response) => {
-                            // Log the status code and status text
-                            log::info!("Response status: {} - {}", response.status(), response.status_text());
-                            
-                            if response.status() == 200 {
+                            let status = response.status();
+                            if status == 200 {
                                 match response.json::<serde_json::Value>().await {
                                     Ok(json) => {
                                         let username = json["username"].as_str().unwrap_or_default().to_string();
                                         link.send_message(ChatAppMsg::RegisterResponse(Ok(username)));
                                     }
-                                    Err(_) => {
-                                        link.send_message(ChatAppMsg::RegisterResponse(Err("Invalid server response.".to_string())));
+                                    Err(e) => {
+                                        let error_msg = format!("JSON parsing error: {:?}", e);
+                                        log::error!("{}", error_msg);
+                                        link.send_message(ChatAppMsg::RegisterResponse(Err(error_msg)));
                                     }
                                 }
                             } else {
-                                // Get error message from response body
-                                match response.text().await {
-                                    Ok(text) => {
-                                        log::error!("Server error response: {}", text);
-                                        if response.status() == 400 {
-                                            link.send_message(ChatAppMsg::RegisterResponse(Err("Username already taken.".to_string())));
-                                        } else if response.status() == 500 {
-                                            link.send_message(ChatAppMsg::RegisterResponse(Err("Database error.".to_string())));
-                                        } else {
-                                            link.send_message(ChatAppMsg::RegisterResponse(Err("Unknown error.".to_string())));
-                                        }
+                                match response.json::<serde_json::Value>().await {
+                                    Ok(json) => {
+                                        let error_msg = format!("Status {}: {}", status, json["error"].as_str().unwrap_or("Unknown error"));
+                                        log::error!("{}", error_msg);
+                                        link.send_message(ChatAppMsg::RegisterResponse(Err(error_msg)));
                                     }
                                     Err(e) => {
-                                        log::error!("Failed to read error response: {}", e);
-                                        link.send_message(ChatAppMsg::RegisterResponse(Err("Failed to read error response".to_string())));
+                                        let error_msg = format!("Failed to parse error response: {}", e);
+                                        log::error!("{}", error_msg);
+                                        link.send_message(ChatAppMsg::RegisterResponse(Err(error_msg)));
                                     }
                                 }
                             }
                         }
                         Err(e) => {
-                            link.send_message(ChatAppMsg::RegisterResponse(Err(format!("Network error: {}", e))));
+                            let error_msg = format!("Network error: {}", e);
+                            log::error!("{}", error_msg);
+                            link.send_message(ChatAppMsg::RegisterResponse(Err(error_msg)));
                         }
                     }
                 });
-    
+            
                 self.error_message = None;
                 true
             }
+
+
+
             ChatAppMsg::RegisterResponse(result) => {
                 match result {
                     Ok(username) => {
