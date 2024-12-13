@@ -2,3 +2,4 @@
 *.db
 local_try/
 Cargo.lock
+*.pyc
