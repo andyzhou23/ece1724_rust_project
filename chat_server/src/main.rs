@@ -1,4 +1,5 @@
 use actix::Actor;
+use actix_cors::Cors;
 use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
 use actix_web_httpauth::middleware::HttpAuthentication;
 use clap;
@@ -66,9 +67,15 @@ async fn main() -> std::io::Result<()> {
     let jwt_secret = "123456".to_string();
     // let jwt_secret = generate_secret(); // disabled in development
     let app_config = AppConfig { jwt_secret };
-    println!("The server is currently listening on localhost:8080.");
+    println!("The server is currently listening on localhost:8081.");
     HttpServer::new(move || {
         App::new()
+            .wrap(
+                Cors::default()
+                    .allow_any_origin()
+                    .allow_any_method()
+                    .allow_any_header(),
+            )
             .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(chat_server.clone()))
             .app_data(web::Data::new(app_config.clone()))
@@ -88,7 +95,7 @@ async fn main() -> std::io::Result<()> {
             )
             .default_service(web::route().to(not_found))
     })
-    .bind("0.0.0.0:8080")?
+    .bind("0.0.0.0:8081")?
     .run()
     .await
 }
