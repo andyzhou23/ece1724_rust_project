@@ -2,6 +2,8 @@
 
 ## API
 
+### root
+
 - `/signup`
   - POST
   - Body:
@@ -26,7 +28,7 @@
     - 400 Bad Request: Username already taken
     - 500 Internal Server Error: Database errors
   - Test:
-    - curl -w "\n" "http://localhost:8080/signup" --json '{"username":"user1", "password":"123456"}'
+    - curl -w "\n" "http://localhost:8080/signup" --json '{"username":"user_1", "password":"123456"}'
 
 - `/login`
   - POST
@@ -52,7 +54,15 @@
     - 400 Bad Request: Username or password incorrect
     - 500 Internal Server Error: Database errors
   - Test:
-    - curl -w "\n" "http://localhost:8080/login" --json '{"username":"user1", "password":"123456"}'
+    - curl -w "\n" "http://localhost:8080/login" --json '{"username":"user_1", "password":"123456"}'
+
+### /api
+
+- Authorization: Bearer YOUR_ACCESS_TOKEN
+  - Header: "Authorization: Bearer YOUR_ACCESS_TOKEN"
+  - Test:
+    - curl -w "\n" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" http://localhost:8080/api/
+    - curl -w "\n" -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjEwMDAwMDAwMDAwfQ.l4vgvku7jrfil1oTkA6uTcR5LzVzRO7etGw4E9CEBHc" http://localhost:8080/api/
 
 - `/ws/connect/{user_id}`
   - GET

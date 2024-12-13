@@ -1,8 +1,11 @@
+use crate::jwt::create_jwt;
+use crate::AppConfig;
 use actix_web::{get, post, web, HttpResponse, Result};
 use serde::Deserialize;
 use serde_json::json;
 use sqlx::{Pool, Row, Sqlite};
 use std::collections::HashMap;
+
 #[derive(Debug, Deserialize)]
 struct UserCredentials {
     username: String,
@@ -61,6 +64,7 @@ async fn signup(
 async fn login(
     pool: web::Data<Pool<Sqlite>>,
     login_data: web::Json<UserCredentials>,
+    app_config: web::Data<AppConfig>,
 ) -> Result<HttpResponse> {
     // Check if user exists and password matches
     let user = match sqlx::query("SELECT id, password FROM users WHERE name = ?")
@@ -88,7 +92,8 @@ async fn login(
             let user_id: i64 = row.get("id");
             Ok(HttpResponse::Ok().json(json!({
                 "id": user_id,
-                "username": login_data.username
+                "username": login_data.username,
+                "access_token": create_jwt(user_id as usize, &app_config.jwt_secret).unwrap()
             })))
         }
         None => Ok(HttpResponse::Unauthorized().json(json!({

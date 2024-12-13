@@ -7,17 +7,17 @@ use crate::chat::connection_actor::ConnectionActor;
 use crate::chat::messages::{AddSession, BroadcastMessage, ClientMessage, RemoveSession};
 #[derive(Clone)]
 struct SessionInfo {
-    user_id: usize,
-    username: String,
+    _user_id: usize,
+    _username: String,
     addr: Addr<ConnectionActor>,
-    connected_at: Instant,
+    _connected_at: Instant,
 }
 
 #[derive(Clone)]
 pub struct ChatServer {
     pool: Pool<Sqlite>,
     sessions: HashMap<usize, SessionInfo>,
-    created_at: Instant,
+    _created_at: Instant,
 }
 
 impl ChatServer {
@@ -25,7 +25,7 @@ impl ChatServer {
         Self {
             pool,
             sessions: HashMap::new(),
-            created_at: Instant::now(),
+            _created_at: Instant::now(),
         }
     }
 
@@ -53,10 +53,10 @@ impl ChatServer {
         self.sessions.insert(
             user_id,
             SessionInfo {
-                user_id,
-                username,
+                _user_id: user_id,
+                _username: username,
                 addr,
-                connected_at: Instant::now(),
+                _connected_at: Instant::now(),
             },
         );
     }
