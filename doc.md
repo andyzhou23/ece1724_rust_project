@@ -28,7 +28,7 @@
     - 400 Bad Request: Username already taken
     - 500 Internal Server Error: Database errors
   - Test:
-    - curl -w "\n" "http://localhost:8080/signup" --json '{"username":"user_1", "password":"123456"}'
+    - curl -w "\n" "http://localhost:8081/signup" --json '{"username":"user_1", "password":"123456"}'
 
 - `/login`
   - POST
@@ -55,14 +55,14 @@
     - 400 Bad Request: Username or password incorrect
     - 500 Internal Server Error: Database errors
   - Test:
-    - curl -w "\n" "http://localhost:8080/login" --json '{"username":"user_1", "password":"123456"}'
+    - curl -w "\n" "http://localhost:8081/login" --json '{"username":"user_1", "password":"123456"}'
 
 ### jwt protected api (prefix: /api)
 
 - JWT Auth
   - Header: "Authorization: Bearer YOUR_ACCESS_TOKEN"
   - Test:
-    - curl -w "\n" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" http://localhost:8080/api/
+    - curl -w "\n" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" http://localhost:8081/api/
 
 - `/api/ws/connect`
   - GET
@@ -73,7 +73,7 @@
   - Error responses:
     - 400 Bad Request: User not found
   - Test:
-    - curl -w "\n" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" "http://localhost:8080/api/ws/connect"
+    - wscat -c ws://localhost:8081/api/ws/connect -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 
 - `/api/group/create`
   - POST
@@ -98,7 +98,7 @@
   - Error responses:
     - 500 Internal Server Error: Database errors
   - Test:
-    - curl -w "\n" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" "http://localhost:8080/api/group/create" --json '{"name":"group1"}'
+    - curl -w "\n" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" "http://localhost:8081/api/group/create" --json '{"name":"group1"}'
 
 - `/api/group/list`
   - GET
@@ -124,7 +124,7 @@
   - Error responses:
     - 500 Internal Server Error: Database errors
   - Test:
-    - curl -w "\n" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" "http://localhost:8080/api/group/list"
+    - curl -w "\n" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" "http://localhost:8081/api/group/list"
 
 - `/api/group/join`
   - POST
@@ -150,7 +150,7 @@
     - 400 Bad Request: Invalid group code or user already in group
     - 500 Internal Server Error: Database errors
   - Test:
-    - curl -w "\n" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" "http://localhost:8080/api/group/join" --json '{"group_code":"FILL_THIS_PART_IN_TEST"}'
+    - curl -w "\n" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" "http://localhost:8081/api/group/join" --json '{"group_code":"FILL_THIS_PART_IN_TEST"}'
 
 - `/api/group/leave`
   - POST
@@ -174,7 +174,7 @@
     - 400 Bad Request: User is not a member of group
     - 500 Internal Server Error: Database errors
   - Test:
-    - curl -w "\n" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" "http://localhost:8080/api/group/leave" --json '{"group_id":1}'
+    - curl -w "\n" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" "http://localhost:8081/api/group/leave" --json '{"group_id":1}'
 
 - `/api/history`
   - GET
@@ -212,7 +212,7 @@
     - 500 Internal Server Error: Database errors
     - If user is not a member of group, its key will be missing in the response
   - Test:
-    - curl -w "\n" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" "http://localhost:8080/api/history" --json '{"entries":[{"group_id":1, "latest_msg_id":5}]}' -X GET
+    - curl -w "\n" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" "http://localhost:8081/api/history" --json '{"entries":[{"group_id":1, "latest_msg_id":5}]}' -X GET
 
 ## WebSocket Payload Format
 

@@ -54,6 +54,7 @@ impl Actor for ConnectionActor {
                 fut::ready(())
             })
             .wait(ctx);
+        ctx.text(format!("User {}: connected", self.user_id));
     }
 
     fn stopped(&mut self, _: &mut Self::Context) {
