@@ -1,5 +1,5 @@
 use crate::AppConfig;
-use actix_web::{web, HttpMessage};
+use actix_web::{web, HttpMessage, HttpRequest};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use rand::rngs::StdRng;
@@ -60,4 +60,11 @@ pub async fn http_validator(
             req,
         )),
     }
+}
+
+pub fn get_user_id(req: &HttpRequest) -> usize {
+    req.extensions()
+        .get::<Claims>()
+        .expect("Claims not found in request extensions")
+        .user_id
 }

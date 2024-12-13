@@ -4,16 +4,15 @@ use actix_web_actors::ws;
 // WebSocket Actor
 use crate::chat::chat_server::ChatServer;
 use crate::chat::connection_actor::ConnectionActor;
+use crate::jwt::get_user_id;
 
-#[get("/ws/connect/{user_id}")]
+#[get("/ws/connect")]
 pub async fn ws_connect(
     req: HttpRequest,
     stream: web::Payload,
-    user_id: web::Path<usize>,
     chat_server: web::Data<Addr<ChatServer>>,
 ) -> Result<HttpResponse, Error> {
-    // todo credential check
-    let user_id = user_id.into_inner();
+    let user_id = get_user_id(&req);
     ws::start(
         ConnectionActor::new(chat_server.get_ref().clone(), user_id),
         &req,

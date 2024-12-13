@@ -42,6 +42,7 @@ async fn not_found() -> impl Responder {
 
 #[derive(Clone)]
 struct AppConfig {
+    port: u16,
     jwt_secret: String,
 }
 
@@ -56,18 +57,40 @@ async fn main() -> std::io::Result<()> {
                 .help("Sets the database file path")
                 .default_value("server.db"),
         )
+        .arg(
+            clap::Arg::new("port")
+                .long("port")
+                .short('p')
+                .value_name("PORT")
+                .help("Sets the port to listen on")
+                .default_value("8081"),
+        )
         .get_matches();
 
     let dbpath = arg_matches.get_one::<String>("dbpath").unwrap();
+    let port = arg_matches
+        .get_one::<String>("port")
+        .unwrap()
+        .parse::<u16>()
+        .unwrap();
 
     let pool = db_init(dbpath)
         .await
         .expect("Failed to initialize database");
     let chat_server = ChatServer::new(pool.clone()).start();
+
+    // TODO: remove this in production
     let jwt_secret = "123456".to_string();
     // let jwt_secret = generate_secret(); // disabled in development
-    let app_config = AppConfig { jwt_secret };
-    println!("The server is currently listening on localhost:8081.");
+
+    let app_config = AppConfig {
+        port: port.clone(),
+        jwt_secret,
+    };
+    println!(
+        "The server is currently listening on localhost:{}.",
+        app_config.port
+    );
     HttpServer::new(move || {
         App::new()
             .wrap(
@@ -95,7 +118,7 @@ async fn main() -> std::io::Result<()> {
             )
             .default_service(web::route().to(not_found))
     })
-    .bind("0.0.0.0:8081")?
+    .bind(format!("0.0.0.0:{}", port))?
     .run()
     .await
 }
