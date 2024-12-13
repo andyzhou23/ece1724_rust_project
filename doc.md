@@ -52,7 +52,7 @@
       ```
 
   - Error responses:
-    - 400 Bad Request: Username or password incorrect
+    - 401 Unauthorized: Username or password incorrect
     - 500 Internal Server Error: Database errors
   - Test:
     - curl -w "\n" "http://localhost:8081/login" --json '{"username":"user_1", "password":"123456"}'
