@@ -26,7 +26,7 @@ struct ChatApp {
     current_page: Page,
     error_message: Option<String>,
     logged_in: bool, // New field to track login state
-    registered_users: HashMap<String, String>,
+    //registered_users: HashMap<String, String>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -44,6 +44,7 @@ enum ChatAppMsg {
     SelectGroup(usize),
     SendMessage(String),
     Login(String, String), 
+    LoginResponse(Result<(String, String), String>),
     Logout,
     Register(String, String), // Registration with username and password
     RegisterResponse(Result<String, String>), // Handle API response
@@ -57,7 +58,7 @@ impl Component for ChatApp {
         Self {
             groups: vec![],
             join_codes: HashMap::new(),
-            registered_users: HashMap::new(),
+            //registered_users: HashMap::new(),
             selected_group: None,
             current_page: Page::LoginPage, // Start with LoginPage
             error_message: None,
@@ -151,22 +152,69 @@ impl Component for ChatApp {
                 true
             }
             ChatAppMsg::Login(username, password) => {
-                // Ensure username and password match the stored data
-                match self.registered_users.get(&username) {
-                    Some(stored_password) if stored_password == &password => {
+                let link = ctx.link().clone();
+            
+                // Create the JSON body for the request
+                let body = serde_json::json!({
+                    "username": username,
+                    "password": password
+                })
+                .to_string();
+            
+                // Send the HTTP POST request
+                let request = reqwasm::http::Request::post("http://localhost:8081/login")
+                    .header("Content-Type", "application/json")
+                    .body(body)
+                    .send();
+            
+                // Handle the HTTP response
+                wasm_bindgen_futures::spawn_local(async move {
+                    match request.await {
+                        Ok(response) => {
+                            if response.status() == 200 {
+                                // Parse the response JSON
+                                match response.json::<serde_json::Value>().await {
+                                    Ok(json) => {
+                                        let id = json["id"].as_i64().unwrap_or_default().to_string();
+                                        let username = json["username"].as_str().unwrap_or_default().to_string();
+                                        link.send_message(ChatAppMsg::LoginResponse(Ok((id, username))));
+                                    }
+                                    Err(_) => {
+                                        link.send_message(ChatAppMsg::LoginResponse(Err("Invalid server response.".to_string())));
+                                    }
+                                }
+                            } else if response.status() == 400 {
+                                link.send_message(ChatAppMsg::LoginResponse(Err("Username or password incorrect.".to_string())));
+                            } else if response.status() == 500 {
+                                link.send_message(ChatAppMsg::LoginResponse(Err("Internal server error.".to_string())));
+                            } else {
+                                link.send_message(ChatAppMsg::LoginResponse(Err("Unknown error.".to_string())));
+                            }
+                        }
+                        Err(e) => {
+                            link.send_message(ChatAppMsg::LoginResponse(Err(format!("Network error: {}", e))));
+                        }
+                    }
+                });
+            
+                self.error_message = None;
+                true
+            }
+            ChatAppMsg::LoginResponse(result) => {
+                match result {
+                    Ok((_id, username)) => {
                         self.logged_in = true;
-                        self.current_page = Page::MainPage; // Navigate to MainPage
                         self.error_message = None;
+                        self.current_page = Page::MainPage; // Navigate to MainPage
+                        log::info!("Logged in as: {}", username);
                     }
-                    Some(_) => {
-                        self.error_message = Some("Incorrect password.".to_string());
-                    }
-                    None => {
-                        self.error_message = Some("Username not found.".to_string());
+                    Err(err) => {
+                        self.error_message = Some(err);
                     }
                 }
                 true
             }
+            
             ChatAppMsg::Register(username, password) => {
                 let link = ctx.link().clone();
     
