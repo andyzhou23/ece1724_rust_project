@@ -1,11 +1,11 @@
 use crate::jwt::create_jwt;
+use crate::jwt::get_user_id;
 use crate::AppConfig;
-use actix_web::{get, post, web, HttpResponse, Result};
+use actix_web::{get, post, web, HttpRequest, HttpResponse, Result};
 use serde::Deserialize;
 use serde_json::json;
 use sqlx::{Pool, Row, Sqlite};
 use std::collections::HashMap;
-
 #[derive(Debug, Deserialize)]
 struct UserCredentials {
     username: String,
@@ -110,22 +110,23 @@ struct HistoryRequestEntry {
 }
 #[derive(Deserialize)]
 struct HistoryRequest {
-    user_id: usize,
     entries: Vec<HistoryRequestEntry>,
 }
 
 #[get("/history")]
 async fn get_history(
     pool: web::Data<Pool<Sqlite>>,
-    req: web::Json<HistoryRequest>,
+    req_body: web::Json<HistoryRequest>,
+    req: HttpRequest,
 ) -> Result<HttpResponse> {
+    let user_id = get_user_id(&req);
     let mut history = HashMap::new();
-    for entry in req.entries.iter() {
+    for entry in req_body.entries.iter() {
         let membership = match sqlx::query(
             "SELECT user_id FROM group_members WHERE group_id = ? AND user_id = ?",
         )
         .bind(entry.group_id as i64)
-        .bind(req.user_id as i64)
+        .bind(user_id as i64)
         .fetch_optional(pool.get_ref())
         .await
         {
@@ -139,7 +140,7 @@ async fn get_history(
         if membership.is_none() {
             println!(
                 "User {} is not a member of group {}",
-                req.user_id, entry.group_id
+                user_id, entry.group_id
             );
             continue;
         }

@@ -1,12 +1,11 @@
-use actix_web::{get, post, web, HttpResponse, Result};
+use crate::jwt::get_user_id;
+use actix_web::{get, post, web, HttpRequest, HttpResponse, Result};
 use serde::Deserialize;
 use serde_json::json;
 use sqlx::{Pool, Row, Sqlite};
-
 #[derive(Deserialize)]
 struct CreateGroupRequest {
     name: String,
-    user_id: usize,
 }
 
 fn generate_code(group_id: usize, unix_time: usize) -> String {
@@ -17,11 +16,13 @@ fn generate_code(group_id: usize, unix_time: usize) -> String {
 #[post("/group/create")]
 async fn create_group(
     pool: web::Data<Pool<Sqlite>>,
-    req: web::Json<CreateGroupRequest>,
+    req_body: web::Json<CreateGroupRequest>,
+    req: HttpRequest,
 ) -> Result<HttpResponse> {
+    let user_id = get_user_id(&req);
     let group =
         match sqlx::query("INSERT INTO groups (name, code) VALUES (?, ?) RETURNING id, created_at")
-            .bind(&req.name)
+            .bind(&req_body.name)
             .bind("TEMP")
             .fetch_one(pool.get_ref())
             .await
@@ -55,7 +56,7 @@ async fn create_group(
     // Add creator as first group member
     match sqlx::query("INSERT INTO group_members (group_id, user_id) VALUES (?, ?)")
         .bind(group_id)
-        .bind(req.user_id as i64)
+        .bind(user_id as i64)
         .execute(pool.get_ref())
         .await
     {
@@ -69,16 +70,14 @@ async fn create_group(
 
     Ok(HttpResponse::Ok().json(json!({
         "group_id": group_id,
-        "group_name": req.name,
+        "group_name": req_body.name,
         "group_code": code
     })))
 }
 
-#[get("/group/list/{user_id}")]
-async fn list_groups(
-    pool: web::Data<Pool<Sqlite>>,
-    user_id: web::Path<usize>,
-) -> Result<HttpResponse> {
+#[get("/group/list")]
+async fn list_groups(pool: web::Data<Pool<Sqlite>>, req: HttpRequest) -> Result<HttpResponse> {
+    let user_id = get_user_id(&req);
     // get groups that users in
     let groups = match sqlx::query(
         "SELECT g.id, g.name, g.code, g.created_at 
@@ -87,7 +86,7 @@ async fn list_groups(
          WHERE gm.user_id = ?
          ORDER BY g.created_at DESC",
     )
-    .bind(*user_id as i64)
+    .bind(user_id as i64)
     .fetch_all(pool.get_ref())
     .await
     {
@@ -146,18 +145,19 @@ async fn list_groups(
 
 #[derive(Debug, Deserialize)]
 struct JoinGroupRequest {
-    user_id: i64,
     group_code: String,
 }
 
 #[post("/group/join")]
 async fn join_group(
     pool: web::Data<Pool<Sqlite>>,
-    req: web::Json<JoinGroupRequest>,
+    req_body: web::Json<JoinGroupRequest>,
+    req: HttpRequest,
 ) -> Result<HttpResponse> {
+    let user_id = get_user_id(&req);
     // Get group id from code
     let group = match sqlx::query("SELECT id, name, code FROM groups WHERE code = ?")
-        .bind(&req.group_code)
+        .bind(&req_body.group_code)
         .fetch_optional(pool.get_ref())
         .await
     {
@@ -182,7 +182,7 @@ async fn join_group(
     let existing_member =
         match sqlx::query("SELECT id FROM group_members WHERE group_id = ? AND user_id = ?")
             .bind(group_id)
-            .bind(req.user_id)
+            .bind(user_id as i64)
             .fetch_optional(pool.get_ref())
             .await
         {
@@ -203,7 +203,7 @@ async fn join_group(
     // Add user to group
     match sqlx::query("INSERT INTO group_members (group_id, user_id) VALUES (?, ?)")
         .bind(group_id)
-        .bind(req.user_id)
+        .bind(user_id as i64)
         .execute(pool.get_ref())
         .await
     {
@@ -220,28 +220,29 @@ async fn join_group(
 
 #[derive(Deserialize)]
 struct LeaveGroupRequest {
-    user_id: i64,
     group_id: i64,
 }
 
 #[post("/group/leave")]
 pub async fn leave_group(
-    req: web::Json<LeaveGroupRequest>,
+    req_body: web::Json<LeaveGroupRequest>,
     pool: web::Data<Pool<Sqlite>>,
+    req: HttpRequest,
 ) -> actix_web::Result<HttpResponse> {
+    let user_id = get_user_id(&req);
     // Remove user from group
     match sqlx::query("DELETE FROM group_members WHERE group_id = ? AND user_id = ? RETURNING id")
-        .bind(req.group_id)
-        .bind(req.user_id)
+        .bind(req_body.group_id)
+        .bind(user_id as i64)
         .fetch_optional(pool.get_ref())
         .await
     {
         Ok(id) => match id {
             Some(_) => Ok(HttpResponse::Ok().json(json!({
-                "message": format!("Successfully left group {}", req.group_id)
+                "message": format!("Successfully left group {}", req_body.group_id)
             }))),
             None => Ok(HttpResponse::BadRequest().json(json!({
-                "error": format!("User is not a member of group {}", req.group_id)
+                "error": format!("User is not a member of group {}", req_body.group_id)
             }))),
         },
         Err(_) => Ok(HttpResponse::InternalServerError().json(json!({

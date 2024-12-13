@@ -1,5 +1,5 @@
 use crate::AppConfig;
-use actix_web::{web, HttpMessage};
+use actix_web::{web, HttpMessage, HttpRequest};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use rand::rngs::StdRng;
@@ -9,14 +9,14 @@ use serde_json::json;
 
 #[derive(Serialize, Deserialize)]
 pub struct Claims {
-    user_id: usize, // user id
-    exp: u64,       // Expiration unix timestamp
+    pub user_id: usize, // user id
+    pub exp: u64,       // Expiration unix timestamp
 }
 
 pub fn create_jwt(user_id: usize, secret: &str) -> Result<String, jsonwebtoken::errors::Error> {
     let claims = Claims {
         user_id,
-        exp: 10000000000, // Set expiration time as needed
+        exp: (chrono::Utc::now().timestamp() as u64) + 3600 * 24,
     };
 
     let header = Header::new(Algorithm::HS256);
@@ -60,4 +60,11 @@ pub async fn http_validator(
             req,
         )),
     }
+}
+
+pub fn get_user_id(req: &HttpRequest) -> usize {
+    req.extensions()
+        .get::<Claims>()
+        .expect("Claims not found in request extensions")
+        .user_id
 }
