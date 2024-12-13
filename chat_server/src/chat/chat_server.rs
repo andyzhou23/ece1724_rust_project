@@ -74,6 +74,21 @@ impl Handler<ClientMessage> for ChatServer {
     type Result = ();
 
     fn handle(&mut self, msg: ClientMessage, _: &mut Context<Self>) {
+        let is_member = futures::executor::block_on(
+            sqlx::query("SELECT 1 FROM group_members WHERE group_id = ? AND user_id = ?")
+                .bind(msg.group_id as i64)
+                .bind(msg.user_id as i64)
+                .fetch_optional(&self.pool),
+        )
+        .is_ok();
+
+        if !is_member {
+            println!(
+                "User {} is not a member of group {}",
+                msg.user_id, msg.group_id
+            );
+            return;
+        }
         // Save message to database
         let insert_result = futures::executor::block_on(
             sqlx::query("INSERT INTO messages (group_id, user_id, content) VALUES (?, ?, ?) RETURNING id, created_at")
