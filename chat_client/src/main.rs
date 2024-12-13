@@ -152,6 +152,12 @@ impl Component for ChatApp {
                 true
             }
             ChatAppMsg::Login(username, password) => {
+                // First validate that username and password are not empty
+                if username.trim().is_empty() || password.trim().is_empty() {
+                    self.error_message = Some("All fields need to be filled out.".to_string());
+                    return true;
+                }
+
                 let link = ctx.link().clone();
             
                 // Create the JSON body for the request
@@ -234,6 +240,11 @@ impl Component for ChatApp {
             }
             
             ChatAppMsg::Register(username, password) => {
+                if username.trim().is_empty() || password.trim().is_empty() {
+                    self.error_message = Some("All fields need to be filled out".to_string());
+                    return true;
+                }
+            
                 let link = ctx.link().clone();
     
                 // Create the JSON body
