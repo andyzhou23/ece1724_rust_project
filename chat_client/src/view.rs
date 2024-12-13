@@ -3,20 +3,143 @@ use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
+pub fn render_registration_page(app: &ChatApp, ctx: &Context<ChatApp>) -> Html {
+    let link = ctx.link();
+
+    html! {
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh;">
+            <h3>{ "Register" }</h3>
+            <input
+                type="text"
+                placeholder="Username"
+                id="reg_username"
+                style="margin-bottom: 10px; padding: 5px;"
+            />
+            <input
+                type="password"
+                placeholder="Password"
+                id="reg_password"
+                style="margin-bottom: 10px; padding: 5px;"
+            />
+            <button
+                onclick={link.callback(|_| {
+                    let window = web_sys::window().unwrap();
+                    let document = window.document().unwrap();
+                    let username = document.get_element_by_id("reg_username")
+                        .unwrap()
+                        .dyn_into::<HtmlInputElement>()
+                        .unwrap()
+                        .value();
+                    let password = document.get_element_by_id("reg_password")
+                        .unwrap()
+                        .dyn_into::<HtmlInputElement>()
+                        .unwrap()
+                        .value();
+                    ChatAppMsg::Register(username, password)
+                })}
+                style="padding: 10px 20px; background-color: #007bff; color: white; border: none; cursor: pointer;"
+            >
+                { "Register" }
+            </button>
+            <button
+                onclick={link.callback(|_| ChatAppMsg::NavigateTo(Page::LoginPage))}
+                style="margin-top: 10px; padding: 5px 15px; background-color: #6c757d; color: white; border: none; cursor: pointer;"
+            >
+                { "Back to Login" }
+            </button>
+            {
+                if let Some(error) = &app.error_message {
+                    html! {
+                        <div style="color: red; margin-top: 20px;">{ error }</div>
+                    }
+                } else {
+                    html! {}
+                }
+            }
+        </div>
+    }
+}
+
+pub fn render_login_page(app: &ChatApp, ctx: &Context<ChatApp>) -> Html {
+    let link = ctx.link();
+
+    html! {
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh;">
+            <h3>{ "Login" }</h3>
+            <input
+                type="text"
+                placeholder="Username"
+                id="login_username"
+                style="margin-bottom: 10px; padding: 5px;"
+            />
+            <input
+                type="password"
+                placeholder="Password"
+                id="login_password"
+                style="margin-bottom: 10px; padding: 5px;"
+            />
+            <button
+                onclick={link.callback(|_| {
+                    let window = web_sys::window().unwrap();
+                    let document = window.document().unwrap();
+                    let username = document.get_element_by_id("login_username")
+                        .unwrap()
+                        .dyn_into::<HtmlInputElement>()
+                        .unwrap()
+                        .value();
+                    let password = document.get_element_by_id("login_password")
+                        .unwrap()
+                        .dyn_into::<HtmlInputElement>()
+                        .unwrap()
+                        .value();
+                    ChatAppMsg::Login(username, password)
+                })}
+                style="padding: 10px 20px; background-color: #007bff; color: white; border: none; cursor: pointer;"
+            >
+                { "Login" }
+            </button>
+            <button
+                onclick={link.callback(|_| ChatAppMsg::NavigateTo(Page::RegistrationPage))}
+                style="margin-top: 10px; padding: 5px 15px; background-color: #6c757d; color: white; border: none; cursor: pointer;"
+            >
+                { "Register" }
+            </button>
+            {
+                if let Some(error) = &app.error_message {
+                    html! {
+                        <div style="color: red; margin-top: 20px;">{ error }</div>
+                    }
+                } else {
+                    html! {}
+                }
+            }
+        </div>
+    }
+}
+
+
+
 pub fn render_main_page(app: &ChatApp, ctx: &Context<ChatApp>) -> Html {
     let link = ctx.link();
 
     html! {
         <div style="display: flex; flex-direction: column; height: 99vh; width: 99vw;">
-            // Header remains the same
             <div style="padding: 10px; background-color: #007bff; color: white; display: flex; justify-content: space-between; align-items: center;">
                 <h3>{ "Main Page" }</h3>
-                <button
-                    onclick={link.callback(|_| ChatAppMsg::NavigateTo(Page::NewGroupPage))}
-                    style="padding: 10px 20px; background: #ff4d4d; color: white; border: none; border-radius: 5px; cursor: pointer;"
-                >
-                    { "New Group" }
-                </button>
+                <div style="display: flex; gap: 10px;">
+                    <button
+                        onclick={link.callback(|_| ChatAppMsg::NavigateTo(Page::NewGroupPage))}
+                        style="padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;"
+                    >
+                        { "New Group" }
+                    </button>
+                    <button
+                        onclick={link.callback(|_| ChatAppMsg::Logout)}
+                        style="padding: 10px 20px; background: #ff4d4d; color: white; border: none; border-radius: 5px; cursor: pointer;"
+                    >
+                        { "Logout" }
+                    </button>
+                 </div>
             </div>
 
             // Main content area with sidebar and main panel
@@ -216,3 +339,5 @@ pub fn render_new_group_page(app: &ChatApp, ctx: &Context<ChatApp>) -> Html {
         </div>
     }
 }
+
+
