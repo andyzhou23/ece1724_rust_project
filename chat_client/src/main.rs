@@ -183,6 +183,7 @@ impl Component for ChatApp {
                                     Ok(json) => {
                                         match (json["id"].as_i64(), json["username"].as_str()) {
                                             (Some(id), Some(username)) => {
+                                                let jwt_token = json["token"].as_str().unwrap_or_default().to_string();//local variable
                                                 link.send_message(ChatAppMsg::LoginResponse(Ok((id.to_string(), username.to_string()))));
                                             }
                                             _ => {
