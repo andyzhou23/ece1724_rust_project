@@ -171,11 +171,10 @@ impl Component for ChatApp {
                 wasm_bindgen_futures::spawn_local(async move {
                     match request.await {
                         Ok(response) => {
-                            if response.status() == 200 {
-                                // Parse the response JSON
+                            let status = response.status();
+                            if status == 200 {
                                 match response.json::<serde_json::Value>().await {
                                     Ok(json) => {
-                                        log::info!("Received JSON response: {:?}", json);
                                         match (json["id"].as_i64(), json["username"].as_str()) {
                                             (Some(id), Some(username)) => {
                                                 link.send_message(ChatAppMsg::LoginResponse(Ok((id.to_string(), username.to_string()))));
@@ -194,14 +193,14 @@ impl Component for ChatApp {
                                     }
                                 }
                             } else {
-                                // Get the actual error message from the response
-                                match response.text().await {
-                                    Ok(error_text) => {
-                                        log::error!("Error: {}", error_text);
-                                        link.send_message(ChatAppMsg::LoginResponse(Err(error_text)));
+                                match response.json::<serde_json::Value>().await {
+                                    Ok(json) => {
+                                        let error_msg = format!("Status {}: {}", status, json["error"].as_str().unwrap_or("Unknown error"));
+                                        log::error!("{}", error_msg);
+                                        link.send_message(ChatAppMsg::LoginResponse(Err(error_msg)));
                                     }
                                     Err(e) => {
-                                        let error_msg = format!("Failed to read error response: {}", e);
+                                        let error_msg = format!("Failed to parse error response: {}", e);
                                         log::error!("{}", error_msg);
                                         link.send_message(ChatAppMsg::LoginResponse(Err(error_msg)));
                                     }
@@ -236,7 +235,7 @@ impl Component for ChatApp {
             
             ChatAppMsg::Register(username, password) => {
                 let link = ctx.link().clone();
-            
+    
                 // Create the JSON body
                 let body = serde_json::json!({ "username": username, "password": password }).to_string();
             
