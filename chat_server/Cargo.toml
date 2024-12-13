@@ -1,0 +1,19 @@
+[package]
+name = "chat_server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+sqlx = { version = "0.8.2", features = ["sqlite", "runtime-tokio"] }
+serde = { version = "1.0", features = ["derive"] }
+actix-web = "4"
+serde_json = "1.0"
+actix-web-actors = "4"
+actix = "0.13"
+futures = "0.3"
+clap = "4.5"
+jsonwebtoken = "9.3"
+rand = "0.8"
+actix-web-httpauth = "0.8"
+actix-cors = "0.7"
+chrono = "0.4"
