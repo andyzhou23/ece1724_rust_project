@@ -427,7 +427,12 @@ impl Component for ChatApp {
                     if !message.trim().is_empty() {
                         log::info!("Message sent: {}", message);
                         self.groups[selected_index].chat_history.push(message.clone());
-                        ctx.link().send_message(ChatAppMsg::SendWebSocketMessage(message));
+                        let group_id = self.groups[selected_index].id;
+                        let message_json = serde_json::json!({
+                            "group_id": group_id,
+                            "content": message
+                        }).to_string();
+                        ctx.link().send_message(ChatAppMsg::SendWebSocketMessage(message_json));
                     }
                 }
                 true
