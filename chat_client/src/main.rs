@@ -2,7 +2,13 @@ mod view;
 //use reqwasm::http::Request;
 use std::collections::HashMap;
 use yew::prelude::*;
-
+// websocket
+use futures_util::sink::SinkExt;
+use futures_util::stream::SplitSink;
+use futures_util::stream::StreamExt;
+use gloo::net::websocket::{futures::WebSocket, Message};
+use std::cell::RefCell;
+use std::rc::Rc;
 #[derive(Clone, PartialEq)]
 struct Group {
     id: String,
@@ -28,6 +34,10 @@ struct ChatApp {
     logged_in: bool, // New field to track login state
     token: Option<String>,
     //registered_users: HashMap<String, String>,
+
+    // websocket
+    ws_write: Option<Rc<RefCell<SplitSink<WebSocket, Message>>>>,
+    // ws_write: Option<SplitSink<WebSocket, Message>>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -53,6 +63,11 @@ enum ChatAppMsg {
     CreateGroupResponse(Result<(String, String, String), String>),
     JoinGroupResponse(Result<(String, String, String), String>),
     DeleteGroupResponse(Result<String, String>),
+    // websocket
+    ConnectWebSocket,
+    DisconnectWebSocket,
+    WebSocketMessageReceived(String),
+    SendWebSocketMessage(String),
 }
 
 impl Component for ChatApp {
@@ -69,6 +84,9 @@ impl Component for ChatApp {
             error_message: None,
             logged_in: false,
             token: None,
+
+            // websocket
+            ws_write: None,
         }
     }
 
@@ -286,7 +304,6 @@ impl Component for ChatApp {
                         // Navigate to the Main Page
                         self.current_page = Page::MainPage;
                         self.error_message = None;
-
                         log::info!("Successfully joined group: {}", group_name);
                     }
                     Err(err) => {
@@ -418,7 +435,12 @@ impl Component for ChatApp {
                 if let Some(selected_index) = self.selected_group {
                     if !message.trim().is_empty() {
                         log::info!("Message sent: {}", message);
-                        self.groups[selected_index].chat_history.push(message);
+                        self.groups[selected_index]
+                            .chat_history
+                            .push(message.clone());
+                        ctx.link()
+                            // Clone the message to avoid moving it
+                            .send_message(ChatAppMsg::SendWebSocketMessage(message.clone()));
                     }
                 }
                 true
@@ -528,6 +550,7 @@ impl Component for ChatApp {
                         self.token = Some(access_token);
                         self.current_page = Page::MainPage;
                         log::info!("Logged in as: {}", username);
+                        ctx.link().send_message(ChatAppMsg::ConnectWebSocket);
                     }
                     Err(err) => {
                         self.error_message = Some(err);
@@ -631,6 +654,55 @@ impl Component for ChatApp {
                 self.logged_in = false;
                 self.current_page = Page::LoginPage;
                 self.error_message = None;
+                ctx.link().send_message(ChatAppMsg::DisconnectWebSocket);
+                true
+            }
+            // websocket
+            ChatAppMsg::ConnectWebSocket => {
+                log::info!("Connecting to WebSocket");
+                let link = ctx.link().clone();
+                let token = self.token.clone().unwrap_or_default();
+                let ws = WebSocket::open(&format!("ws://localhost:8081/api/ws/connect/{}", token))
+                    .expect("Failed to connect WebSocket");
+                let (write, mut read) = ws.split();
+                self.ws_write = Some(Rc::new(RefCell::new(write)));
+                log::info!("WebSocket connected");
+                wasm_bindgen_futures::spawn_local(async move {
+                    while let Some(msg) = read.next().await {
+                        match msg {
+                            Ok(Message::Text(text)) => {
+                                link.send_message(ChatAppMsg::WebSocketMessageReceived(text));
+                            }
+                            Ok(_) => (),
+                            Err(e) => log::error!("WebSocket error: {:?}", e),
+                        }
+                    }
+                });
+                true
+            }
+            ChatAppMsg::DisconnectWebSocket => {
+                self.ws_write = None;
+                true
+            }
+            ChatAppMsg::WebSocketMessageReceived(message) => {
+                log::info!("Received WebSocket message: {}", message);
+                // message receive is done: browser console:
+                // "Received WebSocket message: {"msg_id":1,"sender_id":2,"group_id":1,"content":"hello world in group 1","created_at":1734206817}"
+                // TODO: handle the message, display on group page
+                true
+            }
+            ChatAppMsg::SendWebSocketMessage(message) => {
+                log::info!("Sending WebSocket message: {}", message);
+                let ws_write = self.ws_write.clone();
+                if let Some(ws_write) = ws_write {
+                    wasm_bindgen_futures::spawn_local(async move {
+                        ws_write
+                            .borrow_mut()
+                            .send(Message::Text(message))
+                            .await
+                            .unwrap();
+                    });
+                }
                 true
             }
         }

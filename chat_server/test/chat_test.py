@@ -52,19 +52,20 @@ for user in test_users:
 # {"group_id":3,"content":"hello world in group 3"}
 
 # user_1:
-# wscat -c ws://localhost:8081/api/ws/connect -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzQxNDkzOTl9.nA7oQnNhhodujhvXdfI-0p16xBLXBTKeRQlw6wKZZs0"
+# wscat -c ws://localhost:8081/api/ws/connect -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzQyOTMxODN9.KQWcb_SjKRFZMTOeO-eWD3JeFUA1thsdJmtFIsfY9uk"
+# curl -w "\n" -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzQyOTMxODN9.KQWcb_SjKRFZMTOeO-eWD3JeFUA1thsdJmtFIsfY9uk" "http://localhost:8081/api/group/leave" --json '{"group_id":1}'
 
 # user_2:
-# wscat -c ws://localhost:8081/api/ws/connect -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoyLCJleHAiOjE3MzQxNDkzOTl9.FnpBMczpP3bE4-7Ul8pSH2jBQc2ZIOM3QrMpajD_MTM"
+# wscat -c ws://localhost:8081/api/ws/connect -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoyLCJleHAiOjE3MzQyOTMxODN9.GdI1zPKOQmeKUZWJkQX3c9rYjg2nOvM8L2VA5u-rprY"
 
 # user_3:
-# wscat -c ws://localhost:8081/api/ws/connect -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjozLCJleHAiOjE3MzQxNDkzOTl9.FMyMMu7mDSC0i27vmq_kzTpqq7zYb3XU8CCSm1ClYo4"
+# wscat -c ws://localhost:8081/api/ws/connect -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjozLCJleHAiOjE3MzQyOTMxODN9.zbtc7RzQUehK8Wh1321CrX_VWgsTbDnXiuxk4w_68mc"
 
 # user_4:
-# wscat -c ws://localhost:8081/api/ws/connect -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjo0LCJleHAiOjE3MzQxNDkzOTl9.-jjFhPo5eCoblBIcHpXuxIsT43CpcVUxed1MpcLg9p8"
+# wscat -c ws://localhost:8081/api/ws/connect -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjo0LCJleHAiOjE3MzQyOTMxODN9.lGtK9ReAFODS1wXeO5HCi38_Em2bp00OH1QpGM46QQA"
 
 # user_5:
-# wscat -c ws://localhost:8081/api/ws/connect -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjo1LCJleHAiOjE3MzQxNDkzOTl9.Otf3gYzKd9K1-7Q61ejeHwwH3kD1s-6JaIshEMLYiQE"
+# wscat -c ws://localhost:8081/api/ws/connect -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjo1LCJleHAiOjE3MzQyOTMxODN9.ypt_iVt8oHeJg6UsUvswKZfVASM_JQ6Zxt9KTc2mYuI"
 
 # user_6:
-# wscat -c ws://localhost:8081/api/ws/connect -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjo2LCJleHAiOjE3MzQxNDkzOTl9.UA7EkDNbOnAaURIz4DJYHdpV-Gr7AVy5eKWOTYQPDgs"
+# wscat -c ws://localhost:8081/api/ws/connect -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjo2LCJleHAiOjE3MzQyOTMxODN9.vf1PQljo526izN2IlCuxv7KMm45cUk5CtUM7qfSREOQ"
