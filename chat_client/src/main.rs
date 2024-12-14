@@ -51,6 +51,8 @@ enum ChatAppMsg {
     RegisterResponse(Result<String, String>), // Handle API response
     JoinGroup(String),
     CreateGroupResponse(Result<(String, String, String), String>),
+    JoinGroupResponse(Result<(String, String, String), String>),
+    DeleteGroupResponse(Result<(String, String), String>),
 }
 
 impl Component for ChatApp {
@@ -158,49 +160,229 @@ impl Component for ChatApp {
                 true
             }
             
-            
-            
+
+
             ChatAppMsg::JoinGroup(join_code) => {
-                if let Some(group_id) = self.join_codes.get(&join_code) {
-                    if let Some(group) = self.groups.iter_mut().find(|g| &g.id == group_id) {
-                        group.members.push(Member {
-                            name: "New Member".to_string(), // Replace with the logged-in user's name
-                            status: "online".to_string(),
-                        });
-                        self.selected_group = Some(self.groups.iter().position(|g| &g.id == group_id).unwrap());
-                        self.current_page = Page::MainPage; // Navigate back to the main page
-                        self.error_message = None;
-                    } else {
-                        self.error_message = Some("Group not found.".to_string());
-                    }
-                } else {
-                    self.error_message = Some("Invalid group code.".to_string());
+                if join_code.is_empty() {
+                    self.error_message = Some("Join code cannot be empty.".to_string());
+                    return true;
                 }
-                true
-            }
-            ChatAppMsg::DeleteGroup(group_id) => {
-                // Find and remove the group with matching ID
-                if let Some(index) = self.groups.iter().position(|g| g.id == group_id) {
-                    let group = &self.groups[index];
-                    // Remove the join code from the HashMap if it exists
-                    if let Some(join_code) = &group.join_code {
-                        self.join_codes.remove(join_code);
-                    }
-                    // Remove the group from the vector
-                    self.groups.remove(index);
-                    // Reset selected_group if the deleted group was selected
-                    if Some(index) == self.selected_group {
-                        self.selected_group = None;
-                    } else if let Some(selected) = self.selected_group {
-                        if selected > index {
-                            // Adjust selected_group index if it was after the deleted group
-                            self.selected_group = Some(selected - 1);
+                let token = self.token.clone();
+                let link = ctx.link().clone();
+
+                // Create the JSON body with the group code
+                let body = serde_json::json!({ "group_code": join_code }).to_string();
+
+                // Send the HTTP request
+                let request = reqwasm::http::Request::post("http://localhost:8081/api/group/join")
+                    .header("Content-Type", "application/json")
+                    .header("Authorization", &format!("Bearer {}", token.unwrap_or_default()))
+                    .body(body)
+                    .send();
+
+                wasm_bindgen_futures::spawn_local(async move {
+                    match request.await {
+                        Ok(response) => {
+                            let status = response.status();
+                            if status == 200 {
+                                match response.json::<serde_json::Value>().await {
+                                    Ok(json) => {
+                                        let group_id = json["group_id"].as_i64().unwrap_or_default().to_string();
+                                        let group_name = json["group_name"].as_str().unwrap_or("").to_string();
+                                        let group_code = json["group_code"].as_str().unwrap_or("").to_string();
+            
+                                        // Send a message to update the UI
+                                        link.send_message(ChatAppMsg::JoinGroupResponse(Ok((group_id, group_name, group_code))));
+                                    }
+                                    Err(_) => {
+                                        link.send_message(ChatAppMsg::JoinGroupResponse(Err("Failed to parse response".to_string())));
+                                    }
+                                }
+                            } else {
+                                if status == 400 {
+                                    let error_msg = "Invalid group code or user already in group".to_string();
+                                    log::error!("{}", error_msg);
+                                    link.send_message(ChatAppMsg::JoinGroupResponse(Err(error_msg)));
+                                } else {
+                                    match response.text().await {
+                                        Ok(error_text) => {
+                                            let error_msg = format!("Status {}: {}", status, error_text);
+                                            log::error!("{}", error_msg);
+                                            link.send_message(ChatAppMsg::JoinGroupResponse(Err(error_msg)));
+                                        }
+                                        Err(e) => {
+                                            let error_msg = format!("Failed to read error response: {}", e);
+                                            log::error!("{}", error_msg);
+                                            link.send_message(ChatAppMsg::JoinGroupResponse(Err(error_msg)));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Err(_) => {
+                            link.send_message(ChatAppMsg::JoinGroupResponse(Err("Network error".to_string())));
                         }
                     }
-                    log::info!("Group deleted: {}", group_id);
+                });
+            
+                self.error_message = None;
+                true
+            }
+
+
+
+            ChatAppMsg::JoinGroupResponse(result) => {
+                match result {
+                    Ok((group_id, group_name, group_code)) => {
+                        let new_group = Group {
+                            id: group_id,
+                            name: group_name.clone(),
+                            join_code: Some(group_code),
+                            members: vec![Member {
+                                name: "Member".to_string(),
+                                status: "online".to_string(),
+                            }],
+                            chat_history: vec!["You joined the group!".to_string()],
+                            is_owner: false,
+                        };
+                        self.groups.push(new_group);
+
+                        // Navigate to the Main Page
+                        self.current_page = Page::MainPage;
+                        self.error_message = None;
+
+                        log::info!("Successfully joined group: {}", group_name);
+                    }
+                    Err(err) => {
+                        self.error_message = Some(err);
+                    }
                 }
                 true
             }
+
+
+
+
+            // ChatAppMsg::DeleteGroup(group_id) => {
+            //     // Find and remove the group with matching ID
+            //     if let Some(index) = self.groups.iter().position(|g| g.id == group_id) {
+            //         let group = &self.groups[index];
+            //         // Remove the join code from the HashMap if it exists
+            //         if let Some(join_code) = &group.join_code {
+            //             self.join_codes.remove(join_code);
+            //         }
+            //         // Remove the group from the vector
+            //         self.groups.remove(index);
+            //         // Reset selected_group if the deleted group was selected
+            //         if Some(index) == self.selected_group {
+            //             self.selected_group = None;
+            //         } else if let Some(selected) = self.selected_group {
+            //             if selected > index {
+            //                 // Adjust selected_group index if it was after the deleted group
+            //                 self.selected_group = Some(selected - 1);
+            //             }
+            //         }
+            //         log::info!("Group deleted: {}", group_id);
+            //     }
+            //     true
+            // }
+            ChatAppMsg::DeleteGroup(group_id) => {
+                let token = self.token.clone();
+                let link = ctx.link().clone();
+            
+                // Create the JSON body
+                let body = serde_json::json!({ "group_id": group_id }).to_string();
+            
+                // Send the HTTP request
+                let request = reqwasm::http::Request::post("http://localhost:8081/api/group/leave")
+                    .header("Content-Type", "application/json")
+                    .header("Authorization", &format!("Bearer {}", token.unwrap_or_default()))
+                    .body(body)
+                    .send();
+            
+                wasm_bindgen_futures::spawn_local(async move {
+                    match request.await {
+                        Ok(response) => {
+                            let status = response.status();
+                            if status == 200 {
+                                match response.json::<serde_json::Value>().await {
+                                    Ok(json) => {
+                                        let message = json["message"].as_str().unwrap_or("Group deleted successfully").to_string();
+                                        link.send_message(ChatAppMsg::DeleteGroupResponse(Ok((group_id, message))));
+                                    }
+                                    Err(_) => {
+                                        link.send_message(ChatAppMsg::DeleteGroupResponse(Err("Failed to parse response".to_string())));
+                                    }
+                                }
+                            } else {
+                                match response.text().await {
+                                    Ok(error_text) => {
+                                        let error_msg = format!("Status {}: {}", status, error_text);
+                                        link.send_message(ChatAppMsg::DeleteGroupResponse(Err(error_msg)));
+                                    }
+                                    Err(e) => {
+                                        let error_msg = format!("Failed to read error response: {}", e);
+                                        link.send_message(ChatAppMsg::DeleteGroupResponse(Err(error_msg)));
+                                    }
+                                }
+                            }
+                        }
+                        Err(_) => {
+                            link.send_message(ChatAppMsg::DeleteGroupResponse(Err("Network error".to_string())));
+                        }
+                    }
+                });
+            
+                true
+            }
+            
+            
+            ChatAppMsg::DeleteGroupResponse(result) => {
+                match result {
+                    Ok((group_id, message)) => {
+                        // Find and remove the group with matching ID
+                        if let Some(index) = self.groups.iter().position(|g| g.id == group_id) {
+                            let group = &self.groups[index];
+            
+                            // Remove the join code from the HashMap if it exists
+                            if let Some(join_code) = &group.join_code {
+                                self.join_codes.remove(join_code);
+                            }
+            
+                            // Remove the group from the vector
+                            self.groups.remove(index);
+            
+                            // Reset selected_group if the deleted group was selected
+                            if Some(index) == self.selected_group {
+                                self.selected_group = None;
+                            } else if let Some(selected) = self.selected_group {
+                                if selected > index {
+                                    // Adjust selected_group index if it was after the deleted group
+                                    self.selected_group = Some(selected - 1);
+                                }
+                            }
+            
+                            log::info!("Group deleted successfully: {}", message);
+                        }
+            
+                        // Navigate to the Main Page
+                        self.current_page = Page::MainPage;
+                        self.error_message = None;
+                    }
+                    Err(err) => {
+                        self.error_message = Some(err.clone());
+                        log::error!("Failed to delete group: {:?}", err);
+                    }
+                }
+                true
+            }
+            
+
+            
+            
+
+
+
             ChatAppMsg::SelectGroup(index) => {
                 self.selected_group = Some(index);
                 true
@@ -385,6 +567,7 @@ impl Component for ChatApp {
                 self.error_message = None;
                 true
             }
+            
         
         }
     }
