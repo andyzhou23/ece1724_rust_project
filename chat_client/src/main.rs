@@ -52,7 +52,7 @@ enum ChatAppMsg {
     JoinGroup(String),
     CreateGroupResponse(Result<(String, String, String), String>),
     JoinGroupResponse(Result<(String, String, String), String>),
-    DeleteGroupResponse(Result<(String, String), String>),
+    DeleteGroupResponse(Result<String, String>),
 }
 
 impl Component for ChatApp {
@@ -287,91 +287,108 @@ impl Component for ChatApp {
             //     true
             // }
             ChatAppMsg::DeleteGroup(group_id) => {
+                // First remove the group locally
+                if let Some(index) = self.groups.iter().position(|g| g.id == group_id.clone()) {
+                    let group = &self.groups[index];
+                    // Remove the join code from the HashMap if it exists
+                    if let Some(join_code) = &group.join_code {
+                        self.join_codes.remove(join_code);
+                    }
+                    // Remove the group from the vector
+                    self.groups.remove(index);
+                    // Reset selected_group if the deleted group was selected
+                    if Some(index) == self.selected_group {
+                        self.selected_group = None;
+                    } else if let Some(selected) = self.selected_group {
+                        if selected > index {
+                            // Adjust selected_group index if it was after the deleted group
+                            self.selected_group = Some(selected - 1);
+                        }
+                    }
+                }
+
                 let token = self.token.clone();
                 let link = ctx.link().clone();
-            
+
                 // Create the JSON body
                 let body = serde_json::json!({ "group_id": group_id }).to_string();
-            
+
                 // Send the HTTP request
                 let request = reqwasm::http::Request::post("http://localhost:8081/api/group/leave")
                     .header("Content-Type", "application/json")
                     .header("Authorization", &format!("Bearer {}", token.unwrap_or_default()))
                     .body(body)
                     .send();
-            
+
                 wasm_bindgen_futures::spawn_local(async move {
                     match request.await {
                         Ok(response) => {
                             let status = response.status();
-                            if status == 200 {
-                                match response.json::<serde_json::Value>().await {
-                                    Ok(json) => {
-                                        let message = json["message"].as_str().unwrap_or("Group deleted successfully").to_string();
-                                        link.send_message(ChatAppMsg::DeleteGroupResponse(Ok((group_id, message))));
-                                    }
-                                    Err(_) => {
-                                        link.send_message(ChatAppMsg::DeleteGroupResponse(Err("Failed to parse response".to_string())));
-                                    }
-                                }
-                            } else {
-                                match response.text().await {
-                                    Ok(error_text) => {
-                                        let error_msg = format!("Status {}: {}", status, error_text);
-                                        link.send_message(ChatAppMsg::DeleteGroupResponse(Err(error_msg)));
-                                    }
-                                    Err(e) => {
-                                        let error_msg = format!("Failed to read error response: {}", e);
-                                        link.send_message(ChatAppMsg::DeleteGroupResponse(Err(error_msg)));
-                                    }
-                                }
-                            }
+                            let json_response = response.json::<serde_json::Value>().await;
+                            log::info!("Response JSON: {:?}", json_response);
+
+                            // if status == 200 {
+                            //     match json_response {
+                            //         Ok(json) => {
+                            //             if let Some(message) = json["message"].as_str() {
+                            //                 link.send_message(ChatAppMsg::DeleteGroupResponse(Ok(message.to_string())));
+                            //             } else {
+                            //                 link.send_message(ChatAppMsg::DeleteGroupResponse(Err("Invalid response format".to_string())));
+                            //             }
+                            //         }
+                            //         Err(_) => {
+                            //             link.send_message(ChatAppMsg::DeleteGroupResponse(Err("Failed to parse response".to_string())));
+                            //         }
+                            //     }
+                            // } else {
+                            //     if status == 400 {
+                            //         match json_response {
+                            //             Ok(json) => {
+                            //                 let error_msg = json["error"].as_str().unwrap_or_default().to_string();
+                            //                 log::error!("Server error message: {}", error_msg);
+                            //                 link.send_message(ChatAppMsg::DeleteGroupResponse(Err(error_msg)));
+                            //             }
+                            //             Err(e) => {
+                            //                 let error_msg = format!("Failed to parse error response: {}", e);
+                            //                 log::error!("{}", error_msg);
+                            //                 link.send_message(ChatAppMsg::DeleteGroupResponse(Err(error_msg)));
+                            //             }
+                            //         }
+                            //     } else {
+                            //         match response.text().await {
+                            //             Ok(error_text) => {
+                            //                 let error_msg = format!("Status {}: {}", status, error_text);
+                            //                 log::error!("{}", error_msg);
+                            //                 link.send_message(ChatAppMsg::DeleteGroupResponse(Err(error_msg)));
+                            //             }
+                            //             Err(e) => {
+                            //                 let error_msg = format!("Failed to read error response: {}", e);
+                            //                 log::error!("{}", error_msg);
+                            //                 link.send_message(ChatAppMsg::DeleteGroupResponse(Err(error_msg)));
+                            //             }
+                            //         }
+                            //     }
+                            // }
                         }
                         Err(_) => {
                             link.send_message(ChatAppMsg::DeleteGroupResponse(Err("Network error".to_string())));
                         }
                     }
                 });
-            
+
                 true
             }
             
             
             ChatAppMsg::DeleteGroupResponse(result) => {
                 match result {
-                    Ok((group_id, message)) => {
-                        // Find and remove the group with matching ID
-                        if let Some(index) = self.groups.iter().position(|g| g.id == group_id) {
-                            let group = &self.groups[index];
-            
-                            // Remove the join code from the HashMap if it exists
-                            if let Some(join_code) = &group.join_code {
-                                self.join_codes.remove(join_code);
-                            }
-            
-                            // Remove the group from the vector
-                            self.groups.remove(index);
-            
-                            // Reset selected_group if the deleted group was selected
-                            if Some(index) == self.selected_group {
-                                self.selected_group = None;
-                            } else if let Some(selected) = self.selected_group {
-                                if selected > index {
-                                    // Adjust selected_group index if it was after the deleted group
-                                    self.selected_group = Some(selected - 1);
-                                }
-                            }
-            
-                            log::info!("Group deleted successfully: {}", message);
-                        }
-            
-                        // Navigate to the Main Page
-                        self.current_page = Page::MainPage;
+                    Ok(message) => {
                         self.error_message = None;
+                        log::info!("Group successfully deleted: {}", message);
                     }
                     Err(err) => {
                         self.error_message = Some(err.clone());
-                        log::error!("Failed to delete group: {:?}", err);
+                        log::error!("Server response: {}", err);
                     }
                 }
                 true
