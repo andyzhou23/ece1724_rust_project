@@ -39,7 +39,7 @@ enum Page {
 
 enum ChatAppMsg {
     NavigateTo(Page),
-    CreateGroup(String, String),
+    CreateGroup(String),
     DeleteGroup(String),
     SelectGroup(usize),
     SendMessage(String),
@@ -48,6 +48,7 @@ enum ChatAppMsg {
     Logout,
     Register(String, String), // Registration with username and password
     RegisterResponse(Result<String, String>), // Handle API response
+    JoinGroup(String),
 }
 
 impl Component for ChatApp {
@@ -73,47 +74,53 @@ impl Component for ChatApp {
                 self.error_message = None;
                 true
             }
-            ChatAppMsg::CreateGroup(name, join_id) => {
-                // This code handles the creation of a new chat group when a user submits the create group form
-                log::info!("Creating group: {} with join ID: {}", name, join_id);
-
-                // First validate that the required fields are not empty
-                if name.is_empty() || join_id.is_empty() {
-                    self.error_message = Some("Group name and Join ID cannot be empty".to_string());
+            ChatAppMsg::CreateGroup(name) => {
+                if name.is_empty() {
+                    self.error_message = Some("Group name cannot be empty.".to_string());
                     return true;
                 }
-
-                // Check if the join ID is already being used by another group
-                if self.join_codes.contains_key(&join_id) {
-                    self.error_message = Some("Join ID is already in use. Try another.".to_string());
-                    return true;
-                }
-
+            
                 // Generate a unique group ID
                 let group_id = format!("group-{}", self.groups.len() + 1);
-                
-                // Create a new Group struct with initial values
+            
+                // Create a new group
                 let new_group = Group {
                     id: group_id.clone(),
                     name: name.clone(),
-                    join_code: Some(join_id.clone()),
+                    join_code: None, // Remove join code since it's not needed
                     members: vec![Member {
-                        name: "Owner".to_string(), 
+                        name: "Owner".to_string(), // Replace with the logged-in user's name
                         status: "online".to_string(),
                     }],
                     chat_history: vec!["Welcome to the group!".to_string()],
                     is_owner: true,
                 };
-
-                log::info!("New group created: {:?}", new_group.name);
-                
-                // Add the new group to the app state
+            
+                // Add the new group to the list
                 self.groups.push(new_group);
-                self.join_codes.insert(join_id, group_id);
                 self.selected_group = Some(self.groups.len() - 1); // Select the newly created group
-                self.current_page = Page::MainPage; // Navigate back to main page
+                self.current_page = Page::MainPage; // Navigate to the main page
                 self.error_message = None; // Clear any previous error messages
-                true // Return true to trigger a re-render
+                true
+            }
+            
+            ChatAppMsg::JoinGroup(join_code) => {
+                if let Some(group_id) = self.join_codes.get(&join_code) {
+                    if let Some(group) = self.groups.iter_mut().find(|g| &g.id == group_id) {
+                        group.members.push(Member {
+                            name: "New Member".to_string(), // Replace with the logged-in user's name
+                            status: "online".to_string(),
+                        });
+                        self.selected_group = Some(self.groups.iter().position(|g| &g.id == group_id).unwrap());
+                        self.current_page = Page::MainPage; // Navigate back to the main page
+                        self.error_message = None;
+                    } else {
+                        self.error_message = Some("Group not found.".to_string());
+                    }
+                } else {
+                    self.error_message = Some("Invalid group code.".to_string());
+                }
+                true
             }
             ChatAppMsg::DeleteGroup(group_id) => {
                 // Find and remove the group with matching ID
