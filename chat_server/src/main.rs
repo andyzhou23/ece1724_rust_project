@@ -3,6 +3,7 @@ use actix_cors::Cors;
 use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
 use actix_web_httpauth::middleware::HttpAuthentication;
 use clap;
+
 mod db;
 use db::db_init;
 
@@ -21,7 +22,10 @@ mod chat {
     pub mod routes;
 }
 
-use chat::{chat_server::ChatServer, routes::ws_connect};
+use chat::{
+    chat_server::ChatServer,
+    routes::{ws_connect, ws_connect_with_path},
+};
 
 #[get("/")]
 async fn index() -> impl Responder {
@@ -105,15 +109,16 @@ async fn main() -> std::io::Result<()> {
             .service(index)
             .service(signup)
             .service(login)
+            .service(ws_connect_with_path)
             .service(
                 web::scope("/api")
                     .wrap(HttpAuthentication::bearer(http_validator))
+                    .service(ws_connect)
                     .service(get_history)
                     .service(create_group)
                     .service(list_groups)
                     .service(join_group)
                     .service(leave_group)
-                    .service(ws_connect)
                     .default_service(web::route().to(api_default)),
             )
             .default_service(web::route().to(not_found))
