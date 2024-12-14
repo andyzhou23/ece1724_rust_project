@@ -7,8 +7,10 @@ use futures_util::sink::SinkExt;
 use futures_util::stream::SplitSink;
 use futures_util::stream::StreamExt;
 use gloo::net::websocket::{futures::WebSocket, Message};
+use gloo::timers::callback::Interval;
 use std::cell::RefCell;
 use std::rc::Rc;
+
 #[derive(Clone, PartialEq)]
 struct Group {
     id: String,
@@ -37,7 +39,7 @@ struct ChatApp {
 
     // websocket
     ws_write: Option<Rc<RefCell<SplitSink<WebSocket, Message>>>>,
-    // ws_write: Option<SplitSink<WebSocket, Message>>,
+    ws_ping_interval: Option<Interval>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -87,6 +89,7 @@ impl Component for ChatApp {
 
             // websocket
             ws_write: None,
+            ws_ping_interval: None,
         }
     }
 
@@ -660,13 +663,18 @@ impl Component for ChatApp {
             // websocket
             ChatAppMsg::ConnectWebSocket => {
                 log::info!("Connecting to WebSocket");
-                let link = ctx.link().clone();
                 let token = self.token.clone().unwrap_or_default();
                 let ws = WebSocket::open(&format!("ws://localhost:8081/api/ws/connect/{}", token))
                     .expect("Failed to connect WebSocket");
                 let (write, mut read) = ws.split();
                 self.ws_write = Some(Rc::new(RefCell::new(write)));
                 log::info!("WebSocket connected");
+                let link = ctx.link().clone();
+                self.ws_ping_interval =
+                    Some(gloo::timers::callback::Interval::new(5000, move || {
+                        link.send_message(ChatAppMsg::SendWebSocketMessage("ping".to_string()));
+                    }));
+                let link = ctx.link().clone();
                 wasm_bindgen_futures::spawn_local(async move {
                     while let Some(msg) = read.next().await {
                         match msg {
