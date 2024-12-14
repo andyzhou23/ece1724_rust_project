@@ -33,4 +33,5 @@ pub struct BroadcastMessage {
     pub group_id: usize,
     pub content: String,
     pub created_at: u64,
+    pub sender_name: String,
 }

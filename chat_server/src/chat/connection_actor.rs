@@ -80,6 +80,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ConnectionActor {
                     }
                     Err(_) => {
                         ctx.text("RawText: ".to_string() + &text);
+                        self.last_active_at = Instant::now();
                     }
                 };
             }
