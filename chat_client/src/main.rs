@@ -8,9 +8,9 @@ use futures_util::stream::SplitSink;
 use futures_util::stream::StreamExt;
 use gloo::net::websocket::{futures::WebSocket, Message};
 use gloo::timers::callback::Interval;
+use serde_json;
 use std::cell::RefCell;
 use std::rc::Rc;
-
 #[derive(Clone, PartialEq)]
 struct Group {
     id: String,
@@ -697,6 +697,13 @@ impl Component for ChatApp {
                 // message receive is done: browser console:
                 // "Received WebSocket message: {"msg_id":1,"sender_id":2,"group_id":1,"content":"hello world in group 1","created_at":1734206817}"
                 // TODO: handle the message, display on group page
+                if let Ok(json_message) = serde_json::from_str::<serde_json::Value>(&message) {
+                    log::info!("Parsed JSON message: {:?}", json_message);
+                    // TODO: Handle the parsed JSON message, e.g., update the chat history or UI
+                } else {
+                    log::info!("Received message: {}", message);
+                }
+
                 true
             }
             ChatAppMsg::SendWebSocketMessage(message) => {
