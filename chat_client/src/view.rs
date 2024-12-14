@@ -124,6 +124,7 @@ pub fn render_main_page(app: &ChatApp, ctx: &Context<ChatApp>) -> Html {
 
     html! {
         <div style="display: flex; flex-direction: column; height: 99vh; width: 99vw;">
+            // Header
             <div style="padding: 10px; background-color: #007bff; color: white; display: flex; justify-content: space-between; align-items: center;">
                 <h3>{ "Main Page" }</h3>
                 <div style="display: flex; gap: 10px;">
@@ -142,9 +143,9 @@ pub fn render_main_page(app: &ChatApp, ctx: &Context<ChatApp>) -> Html {
                  </div>
             </div>
 
-            // Main content area with sidebar and main panel
+            // Main content
             <div style="display: flex; flex: 1; overflow: hidden;">
-                // Left sidebar
+                // Sidebar for group list
                 <div style="width: 250px; background-color: #f8f9fa; border-right: 1px solid #dee2e6; overflow-y: auto;">
                     <div style="padding: 15px;">
                         <h4>{ "Your Groups" }</h4>
@@ -185,7 +186,7 @@ pub fn render_main_page(app: &ChatApp, ctx: &Context<ChatApp>) -> Html {
                     </div>
                 </div>
 
-                // Main content panel - Chat Window
+                // Chat window for selected group
                 <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
                     {
                         if let Some(selected_index) = app.selected_group {
@@ -259,36 +260,32 @@ pub fn render_main_page(app: &ChatApp, ctx: &Context<ChatApp>) -> Html {
     }
 }
 
+
 pub fn render_new_group_page(app: &ChatApp, ctx: &Context<ChatApp>) -> Html {
     let link = ctx.link();
 
     let onclick_create = link.callback(|_| {
         let window = web_sys::window().unwrap();
         let document = window.document().unwrap();
-        
-        // Get values from input fields
         let group_name = document
             .get_element_by_id("group_name")
             .unwrap()
             .dyn_into::<HtmlInputElement>()
             .unwrap()
             .value();
-            
-        let join_id = document
-            .get_element_by_id("join_id")
+        ChatAppMsg::CreateGroup(group_name)
+    });
+
+    let onclick_join = link.callback(|_| {
+        let window = web_sys::window().unwrap();
+        let document = window.document().unwrap();
+        let join_code = document
+            .get_element_by_id("join_code")
             .unwrap()
             .dyn_into::<HtmlInputElement>()
             .unwrap()
             .value();
-
-        // Validate inputs
-        if group_name.is_empty() || join_id.is_empty() {
-            // Return error message instead of just navigating
-            ChatAppMsg::CreateGroup(group_name, join_id) // This will trigger error handling in update()
-        } else {
-            // Create the group
-            ChatAppMsg::CreateGroup(group_name, join_id)
-        }
+        ChatAppMsg::JoinGroup(join_code)
     });
 
     html! {
@@ -313,18 +310,27 @@ pub fn render_new_group_page(app: &ChatApp, ctx: &Context<ChatApp>) -> Html {
                         style="margin-bottom: 10px; padding: 5px; width: 200px;" 
                     />
                     <br/>
-                    <input 
-                        type="text" 
-                        placeholder="Join ID" 
-                        id="join_id" 
-                        style="margin-bottom: 10px; padding: 5px; width: 200px;" 
-                    />
-                    <br/>
                     <button
                         onclick={onclick_create}
                         style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;"
                     >
                         { "Create Group" }
+                    </button>
+                </div>
+                <div style="margin-top: 20px;">
+                    <h4>{ "Join Group" }</h4>
+                    <input 
+                        type="text" 
+                        placeholder="Enter Join Code" 
+                        id="join_code" 
+                        style="margin-bottom: 10px; padding: 5px; width: 200px;" 
+                    />
+                    <br/>
+                    <button
+                        onclick={onclick_join}
+                        style="padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;"
+                    >
+                        { "Join Group" }
                     </button>
                 </div>
             </div>
@@ -339,5 +345,6 @@ pub fn render_new_group_page(app: &ChatApp, ctx: &Context<ChatApp>) -> Html {
         </div>
     }
 }
+
 
 
