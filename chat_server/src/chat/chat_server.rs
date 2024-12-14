@@ -109,6 +109,18 @@ impl Handler<ClientMessage> for ChatServer {
             }
         };
 
+        let sender_name = match futures::executor::block_on(
+            sqlx::query("SELECT name FROM users WHERE id = ?")
+                .bind(msg.user_id as i64)
+                .fetch_one(&self.pool),
+        ) {
+            Ok(result) => result.get::<String, _>("name"),
+            Err(e) => {
+                println!("Failed to get sender name: {}", e);
+                return;
+            }
+        };
+
         // Get users in the same group
         let target_users = match futures::executor::block_on(
             sqlx::query("SELECT user_id FROM group_members WHERE group_id = ?")
@@ -132,6 +144,7 @@ impl Handler<ClientMessage> for ChatServer {
                     group_id: msg.group_id,
                     content: msg.content.clone(),
                     created_at,
+                    sender_name: sender_name.clone(),
                 });
             }
         }

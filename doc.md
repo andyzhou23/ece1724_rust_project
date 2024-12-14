@@ -124,7 +124,7 @@
   - Error responses:
     - 500 Internal Server Error: Database errors
   - Test:
-    - curl -w "\n" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" "http://localhost:8081/api/group/list"
+    - curl -w "\n" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" "http://localhost:8081/api/group/list" -X GET
 
 - `/api/group/join`
   - POST
@@ -226,6 +226,7 @@
     - group_id: integer
     - content: string
     - created_at: integer (Unix timestamp in seconds)
+    - sender_name: string
   - if not json, server will build one with group_id=0
 - Ping:
   - Anything
