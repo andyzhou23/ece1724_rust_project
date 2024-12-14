@@ -124,6 +124,7 @@ pub fn render_main_page(app: &ChatApp, ctx: &Context<ChatApp>) -> Html {
 
     html! {
         <div style="display: flex; flex-direction: column; height: 99vh; width: 99vw;">
+            // Header
             <div style="padding: 10px; background-color: #007bff; color: white; display: flex; justify-content: space-between; align-items: center;">
                 <h3>{ "Main Page" }</h3>
                 <div style="display: flex; gap: 10px;">
@@ -142,9 +143,9 @@ pub fn render_main_page(app: &ChatApp, ctx: &Context<ChatApp>) -> Html {
                  </div>
             </div>
 
-            // Main content area with sidebar and main panel
+            // Main content
             <div style="display: flex; flex: 1; overflow: hidden;">
-                // Left sidebar
+                // Sidebar for group list
                 <div style="width: 250px; background-color: #f8f9fa; border-right: 1px solid #dee2e6; overflow-y: auto;">
                     <div style="padding: 15px;">
                         <h4>{ "Your Groups" }</h4>
@@ -185,7 +186,7 @@ pub fn render_main_page(app: &ChatApp, ctx: &Context<ChatApp>) -> Html {
                     </div>
                 </div>
 
-                // Main content panel - Chat Window
+                // Chat window for selected group
                 <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
                     {
                         if let Some(selected_index) = app.selected_group {
@@ -258,6 +259,7 @@ pub fn render_main_page(app: &ChatApp, ctx: &Context<ChatApp>) -> Html {
         </div>
     }
 }
+
 
 pub fn render_new_group_page(app: &ChatApp, ctx: &Context<ChatApp>) -> Html {
     let link = ctx.link();
