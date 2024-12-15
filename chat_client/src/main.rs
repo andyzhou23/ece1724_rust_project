@@ -21,7 +21,6 @@ struct Group {
     members: Vec<Member>,
     chat_history: Vec<String>,
     latest_msg_id: i64,
-
 }
 
 #[derive(Clone, PartialEq, serde::Deserialize)]
@@ -41,6 +40,8 @@ struct ChatApp {
     current_user: Option<Member>,
     ws_write: Option<Rc<RefCell<SplitSink<WebSocket, Message>>>>,
     ws_ping_interval: Option<Interval>,
+    // group status interval
+    group_status_interval: Option<Interval>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -57,7 +58,7 @@ enum ChatAppMsg {
     DeleteGroup(i64),
     SelectGroup(usize),
     SendMessage(String),
-    Login(String, String), 
+    Login(String, String),
     LoginResponse(Result<(i64, String, String), String>),
     Logout,
     Register(String, String), // Registration with username and password
@@ -75,13 +76,12 @@ enum ChatAppMsg {
     UpdateChatHistory(i64, Vec<String>, i64),
     UpdateOnlineMembers(HashMap<i64, String>),
     FetchOnlineMembers(i64), // To fetch online members for a specific group
-
 }
 
 impl Component for ChatApp {
     type Message = ChatAppMsg;
     type Properties = ();
-    
+
     fn create(_ctx: &Context<Self>) -> Self {
         Self {
             groups: vec![],
@@ -96,6 +96,8 @@ impl Component for ChatApp {
             // websocket
             ws_write: None,
             ws_ping_interval: None,
+            // group status interval
+            group_status_interval: None,
         }
     }
 
@@ -111,20 +113,24 @@ impl Component for ChatApp {
                     self.error_message = Some("Group name cannot be empty.".to_string());
                     return true;
                 }
-            
+
                 let token = self.token.clone(); // Use auth_token from LoginResponse
                 let link = ctx.link().clone();
-            
+
                 // Create the JSON body
                 let body = serde_json::json!({ "name": name }).to_string();
-            
+
                 // Send the HTTP request
-                let request = reqwasm::http::Request::post("http://localhost:8081/api/group/create")
-                    .header("Content-Type", "application/json")
-                    .header("Authorization", &format!("Bearer {}", token.unwrap_or_default()))
-                    .body(body)
-                    .send();
-            
+                let request =
+                    reqwasm::http::Request::post("http://localhost:8081/api/group/create")
+                        .header("Content-Type", "application/json")
+                        .header(
+                            "Authorization",
+                            &format!("Bearer {}", token.unwrap_or_default()),
+                        )
+                        .body(body)
+                        .send();
+
                 // Handle the HTTP response
                 wasm_bindgen_futures::spawn_local(async move {
                     match request.await {
@@ -133,26 +139,37 @@ impl Component for ChatApp {
                             if status == 200 {
                                 match response.json::<serde_json::Value>().await {
                                     Ok(json) => {
-                                        let group_id = json["group_id"].as_i64().unwrap_or_default();
-                                        let group_name = json["group_name"].as_str().unwrap_or("").to_string();
-                                        let group_code = json["group_code"].as_str().unwrap_or("").to_string();
+                                        let group_id =
+                                            json["group_id"].as_i64().unwrap_or_default();
+                                        let group_name =
+                                            json["group_name"].as_str().unwrap_or("").to_string();
+                                        let group_code =
+                                            json["group_code"].as_str().unwrap_or("").to_string();
                                         // Send a message to update the UI
-                                        link.send_message(ChatAppMsg::CreateGroupResponse(Ok((group_id, group_name, group_code))));
+                                        link.send_message(ChatAppMsg::CreateGroupResponse(Ok((
+                                            group_id, group_name, group_code,
+                                        ))));
                                     }
                                     Err(_) => {
-                                        link.send_message(ChatAppMsg::CreateGroupResponse(Err("Failed to parse response".to_string())));
+                                        link.send_message(ChatAppMsg::CreateGroupResponse(Err(
+                                            "Failed to parse response".to_string(),
+                                        )));
                                     }
                                 }
                             } else {
-                                link.send_message(ChatAppMsg::CreateGroupResponse(Err("Server error".to_string())));
+                                link.send_message(ChatAppMsg::CreateGroupResponse(Err(
+                                    "Server error".to_string(),
+                                )));
                             }
                         }
                         Err(_) => {
-                            link.send_message(ChatAppMsg::CreateGroupResponse(Err("Network error".to_string())));
+                            link.send_message(ChatAppMsg::CreateGroupResponse(Err(
+                                "Network error".to_string(),
+                            )));
                         }
                     }
                 });
-            
+
                 self.error_message = None;
                 true
             }
@@ -173,11 +190,11 @@ impl Component for ChatApp {
                         };
                         // Add the new group to the list
                         self.groups.push(new_group);
-            
+
                         // Navigate to the Main Page
                         self.current_page = Page::MainPage;
                         self.error_message = None;
-            
+
                         log::info!("Group created and added to the list: {}", group_name);
                     }
                     Err(err) => {
@@ -186,8 +203,6 @@ impl Component for ChatApp {
                 }
                 true
             }
-            
-
 
             ChatAppMsg::JoinGroup(join_code) => {
                 if join_code.is_empty() {
@@ -203,7 +218,10 @@ impl Component for ChatApp {
                 // Send the HTTP request
                 let request = reqwasm::http::Request::post("http://localhost:8081/api/group/join")
                     .header("Content-Type", "application/json")
-                    .header("Authorization", &format!("Bearer {}", token.unwrap_or_default()))
+                    .header(
+                        "Authorization",
+                        &format!("Bearer {}", token.unwrap_or_default()),
+                    )
                     .body(body)
                     .send();
 
@@ -214,49 +232,69 @@ impl Component for ChatApp {
                             if status == 200 {
                                 match response.json::<serde_json::Value>().await {
                                     Ok(json) => {
-                                        let group_id = json["group_id"].as_i64().unwrap_or_default().to_string();
-                                        let group_name = json["group_name"].as_str().unwrap_or("").to_string();
-                                        let group_code = json["group_code"].as_str().unwrap_or("").to_string();
-            
+                                        let group_id = json["group_id"]
+                                            .as_i64()
+                                            .unwrap_or_default()
+                                            .to_string();
+                                        let group_name =
+                                            json["group_name"].as_str().unwrap_or("").to_string();
+                                        let group_code =
+                                            json["group_code"].as_str().unwrap_or("").to_string();
+
                                         // Send a message to update the UI
-                                        link.send_message(ChatAppMsg::JoinGroupResponse(Ok((group_id.parse::<i64>().unwrap_or_default(), group_name, group_code))));
+                                        link.send_message(ChatAppMsg::JoinGroupResponse(Ok((
+                                            group_id.parse::<i64>().unwrap_or_default(),
+                                            group_name,
+                                            group_code,
+                                        ))));
                                     }
                                     Err(_) => {
-                                        link.send_message(ChatAppMsg::JoinGroupResponse(Err("Failed to parse response".to_string())));
+                                        link.send_message(ChatAppMsg::JoinGroupResponse(Err(
+                                            "Failed to parse response".to_string(),
+                                        )));
                                     }
                                 }
                             } else {
                                 if status == 400 {
-                                    let error_msg = "Invalid group code or user already in group".to_string();
+                                    let error_msg =
+                                        "Invalid group code or user already in group".to_string();
                                     log::error!("{}", error_msg);
-                                    link.send_message(ChatAppMsg::JoinGroupResponse(Err(error_msg)));
+                                    link.send_message(ChatAppMsg::JoinGroupResponse(Err(
+                                        error_msg,
+                                    )));
                                 } else {
                                     match response.text().await {
                                         Ok(error_text) => {
-                                            let error_msg = format!("Status {}: {}", status, error_text);
+                                            let error_msg =
+                                                format!("Status {}: {}", status, error_text);
                                             log::error!("{}", error_msg);
-                                            link.send_message(ChatAppMsg::JoinGroupResponse(Err(error_msg)));
+                                            link.send_message(ChatAppMsg::JoinGroupResponse(Err(
+                                                error_msg,
+                                            )));
                                         }
                                         Err(e) => {
-                                            let error_msg = format!("Failed to read error response: {}", e);
+                                            let error_msg =
+                                                format!("Failed to read error response: {}", e);
                                             log::error!("{}", error_msg);
-                                            link.send_message(ChatAppMsg::JoinGroupResponse(Err(error_msg)));
+                                            link.send_message(ChatAppMsg::JoinGroupResponse(Err(
+                                                error_msg,
+                                            )));
                                         }
                                     }
                                 }
                             }
                         }
                         Err(_) => {
-                            link.send_message(ChatAppMsg::JoinGroupResponse(Err("Network error".to_string())));
+                            link.send_message(ChatAppMsg::JoinGroupResponse(Err(
+                                "Network error".to_string()
+                            )));
                         }
                     }
                 });
-            
+
                 self.error_message = None;
                 true
             }
-
-
 
             ChatAppMsg::JoinGroupResponse(result) => {
                 match result {
@@ -288,9 +326,6 @@ impl Component for ChatApp {
                 true
             }
 
-
-
-
             // ChatAppMsg::DeleteGroup(group_id) => {
             //     // Find and remove the group with matching ID
             //     if let Some(index) = self.groups.iter().position(|g| g.id == group_id) {
@@ -319,8 +354,8 @@ impl Component for ChatApp {
                 if let Some(index) = self.groups.iter().position(|g| g.id == group_id) {
                     let group = &self.groups[index];
                     // Remove the join code from the HashMap if it exists
-                    self.join_codes.remove(&group.code);//changed
-                    // Remove the group from the vector
+                    self.join_codes.remove(&group.code); //changed
+                                                         // Remove the group from the vector
                     self.groups.remove(index);
                     // Reset selected_group if the deleted group was selected
                     if Some(index) == self.selected_group {
@@ -342,7 +377,10 @@ impl Component for ChatApp {
                 // Send the HTTP request
                 let request = reqwasm::http::Request::post("http://localhost:8081/api/group/leave")
                     .header("Content-Type", "application/json")
-                    .header("Authorization", &format!("Bearer {}", token.unwrap_or_default()))
+                    .header(
+                        "Authorization",
+                        &format!("Bearer {}", token.unwrap_or_default()),
+                    )
                     .body(body)
                     .send();
 
@@ -397,15 +435,16 @@ impl Component for ChatApp {
                             // }
                         }
                         Err(_) => {
-                            link.send_message(ChatAppMsg::DeleteGroupResponse(Err("Network error".to_string())));
+                            link.send_message(ChatAppMsg::DeleteGroupResponse(Err(
+                                "Network error".to_string(),
+                            )));
                         }
                     }
                 });
 
                 true
             }
-            
-            
+
             ChatAppMsg::DeleteGroupResponse(result) => {
                 match result {
                     Ok(message) => {
@@ -419,7 +458,7 @@ impl Component for ChatApp {
                 }
                 true
             }
-            
+
             ChatAppMsg::SelectGroup(index) => {
                 self.selected_group = Some(index);
                 if let Some(group) = self.groups.get(index) {
@@ -429,7 +468,7 @@ impl Component for ChatApp {
                 }
                 true
             }
-            
+
             ChatAppMsg::SendMessage(message) => {
                 if let Some(selected_index) = self.selected_group {
                     if !message.trim().is_empty() {
@@ -439,8 +478,10 @@ impl Component for ChatApp {
                         let message_json = serde_json::json!({
                             "group_id": group_id,
                             "content": message
-                        }).to_string();
-                        ctx.link().send_message(ChatAppMsg::SendWebSocketMessage(message_json));
+                        })
+                        .to_string();
+                        ctx.link()
+                            .send_message(ChatAppMsg::SendWebSocketMessage(message_json));
                     }
                 }
                 true
@@ -453,20 +494,20 @@ impl Component for ChatApp {
                 }
 
                 let link = ctx.link().clone();
-            
+
                 // Create the JSON body for the request
                 let body = serde_json::json!({
                     "username": username,
                     "password": password
                 })
                 .to_string();
-            
+
                 // Send the HTTP POST request
                 let request = reqwasm::http::Request::post("http://localhost:8081/login")
                     .header("Content-Type", "application/json")
                     .body(body)
                     .send();
-            
+
                 // Handle the HTTP response
                 wasm_bindgen_futures::spawn_local(async move {
                     match request.await {
@@ -475,34 +516,58 @@ impl Component for ChatApp {
                             if status == 200 {
                                 match response.json::<serde_json::Value>().await {
                                     Ok(json) => {
-                                        match (json["id"].as_i64(), json["username"].as_str(), json["access_token"].as_str()) {
+                                        match (
+                                            json["id"].as_i64(),
+                                            json["username"].as_str(),
+                                            json["access_token"].as_str(),
+                                        ) {
                                             (Some(id), Some(username), Some(access_token)) => {
-                                                link.send_message(ChatAppMsg::LoginResponse(Ok((id, username.to_string(), access_token.to_string()))));
+                                                link.send_message(ChatAppMsg::LoginResponse(Ok((
+                                                    id,
+                                                    username.to_string(),
+                                                    access_token.to_string(),
+                                                ))));
                                             }
                                             _ => {
-                                                let error_msg = format!("Invalid JSON structure. Received: {:?}", json);
+                                                let error_msg = format!(
+                                                    "Invalid JSON structure. Received: {:?}",
+                                                    json
+                                                );
                                                 log::error!("{}", error_msg);
-                                                link.send_message(ChatAppMsg::LoginResponse(Err(error_msg)));
+                                                link.send_message(ChatAppMsg::LoginResponse(Err(
+                                                    error_msg,
+                                                )));
                                             }
                                         }
                                     }
                                     Err(e) => {
                                         let error_msg = format!("JSON parsing error: {:?}", e);
                                         log::error!("{}", error_msg);
-                                        link.send_message(ChatAppMsg::LoginResponse(Err(error_msg)));
+                                        link.send_message(ChatAppMsg::LoginResponse(Err(
+                                            error_msg,
+                                        )));
                                     }
                                 }
                             } else {
                                 match response.json::<serde_json::Value>().await {
                                     Ok(json) => {
-                                        let error_msg = format!("Status {}: {}", status, json["error"].as_str().unwrap_or("Unknown error"));
+                                        let error_msg = format!(
+                                            "Status {}: {}",
+                                            status,
+                                            json["error"].as_str().unwrap_or("Unknown error")
+                                        );
                                         log::error!("{}", error_msg);
-                                        link.send_message(ChatAppMsg::LoginResponse(Err(error_msg)));
+                                        link.send_message(ChatAppMsg::LoginResponse(Err(
+                                            error_msg,
+                                        )));
                                     }
                                     Err(e) => {
-                                        let error_msg = format!("Failed to parse error response: {}", e);
+                                        let error_msg =
+                                            format!("Failed to parse error response: {}", e);
                                         log::error!("{}", error_msg);
-                                        link.send_message(ChatAppMsg::LoginResponse(Err(error_msg)));
+                                        link.send_message(ChatAppMsg::LoginResponse(Err(
+                                            error_msg,
+                                        )));
                                     }
                                 }
                             }
@@ -514,7 +579,7 @@ impl Component for ChatApp {
                         }
                     }
                 });
-            
+
                 self.error_message = None;
                 true
             }
@@ -526,10 +591,7 @@ impl Component for ChatApp {
                         self.token = Some(access_token);
                         self.current_page = Page::MainPage;
                         // Store the current user's information
-                        self.current_user = Some(Member {
-                            id,
-                            name: username,
-                        });
+                        self.current_user = Some(Member { id, name: username });
                         log::info!("Logged in as: {}", self.current_user.as_ref().unwrap().name);
                         self.fetch_groups(ctx.link());
                         ctx.link().send_message(ChatAppMsg::ConnectWebSocket);
@@ -540,24 +602,25 @@ impl Component for ChatApp {
                 }
                 true
             }
-            
+
             ChatAppMsg::Register(username, password) => {
                 if username.trim().is_empty() || password.trim().is_empty() {
                     self.error_message = Some("All fields need to be filled out".to_string());
                     return true;
                 }
-            
+
                 let link = ctx.link().clone();
-    
+
                 // Create the JSON body
-                let body = serde_json::json!({ "username": username, "password": password }).to_string();
-            
+                let body =
+                    serde_json::json!({ "username": username, "password": password }).to_string();
+
                 // Send the HTTP request
                 let request = reqwasm::http::Request::post("http://localhost:8081/signup")
                     .header("Content-Type", "application/json")
                     .body(body)
                     .send();
-            
+
                 // Handle the HTTP response
                 wasm_bindgen_futures::spawn_local(async move {
                     match request.await {
@@ -566,26 +629,42 @@ impl Component for ChatApp {
                             if status == 200 {
                                 match response.json::<serde_json::Value>().await {
                                     Ok(json) => {
-                                        let username = json["username"].as_str().unwrap_or_default().to_string();
-                                        link.send_message(ChatAppMsg::RegisterResponse(Ok(username)));
+                                        let username = json["username"]
+                                            .as_str()
+                                            .unwrap_or_default()
+                                            .to_string();
+                                        link.send_message(ChatAppMsg::RegisterResponse(Ok(
+                                            username,
+                                        )));
                                     }
                                     Err(e) => {
                                         let error_msg = format!("JSON parsing error: {:?}", e);
                                         log::error!("{}", error_msg);
-                                        link.send_message(ChatAppMsg::RegisterResponse(Err(error_msg)));
+                                        link.send_message(ChatAppMsg::RegisterResponse(Err(
+                                            error_msg,
+                                        )));
                                     }
                                 }
                             } else {
                                 match response.json::<serde_json::Value>().await {
                                     Ok(json) => {
-                                        let error_msg = format!("Status {}: {}", status, json["error"].as_str().unwrap_or("Unknown error"));
+                                        let error_msg = format!(
+                                            "Status {}: {}",
+                                            status,
+                                            json["error"].as_str().unwrap_or("Unknown error")
+                                        );
                                         log::error!("{}", error_msg);
-                                        link.send_message(ChatAppMsg::RegisterResponse(Err(error_msg)));
+                                        link.send_message(ChatAppMsg::RegisterResponse(Err(
+                                            error_msg,
+                                        )));
                                     }
                                     Err(e) => {
-                                        let error_msg = format!("Failed to parse error response: {}", e);
+                                        let error_msg =
+                                            format!("Failed to parse error response: {}", e);
                                         log::error!("{}", error_msg);
-                                        link.send_message(ChatAppMsg::RegisterResponse(Err(error_msg)));
+                                        link.send_message(ChatAppMsg::RegisterResponse(Err(
+                                            error_msg,
+                                        )));
                                     }
                                 }
                             }
@@ -597,12 +676,10 @@ impl Component for ChatApp {
                         }
                     }
                 });
-            
+
                 self.error_message = None;
                 true
             }
-
-
 
             ChatAppMsg::RegisterResponse(result) => {
                 match result {
@@ -683,7 +760,9 @@ impl Component for ChatApp {
                         if let Some(group) = self.groups.iter_mut().find(|g| g.id == group_id) {
                             if let Some(content) = json_message["content"].as_str() {
                                 if let Some(sender_name) = json_message["sender_name"].as_str() {
-                                    group.chat_history.push(format!("{}: {}", sender_name, content));
+                                    group
+                                        .chat_history
+                                        .push(format!("{}: {}", sender_name, content));
                                     group.latest_msg_id = json_message["msg_id"].as_i64().unwrap();
                                 }
                             }
@@ -710,7 +789,7 @@ impl Component for ChatApp {
                 }
                 true
             }
-            ChatAppMsg::UpdateChatHistory(group_id, history, latest_msg_id  ) => {
+            ChatAppMsg::UpdateChatHistory(group_id, history, latest_msg_id) => {
                 if let Some(group) = self.groups.iter_mut().find(|g| g.id == group_id) {
                     group.chat_history.extend(history);
                     group.latest_msg_id = latest_msg_id;
@@ -720,10 +799,11 @@ impl Component for ChatApp {
             ChatAppMsg::UpdateOnlineMembers(members) => {
                 if let Some(selected_index) = self.selected_group {
                     if let Some(group) = self.groups.get_mut(selected_index) {
-                        group.members = members.into_iter()
+                        group.members = members
+                            .into_iter()
                             .map(|(id, name)| Member { id, name })
                             .collect();
-            
+
                         // Sort members by name alphabetically, and then by id numerically
                         group.members.sort_by(|a, b| {
                             let name_order = a.name.to_lowercase().cmp(&b.name.to_lowercase());
@@ -741,9 +821,6 @@ impl Component for ChatApp {
                 self.fetch_online_members(ctx.link(), group_id);
                 false // Don't re-render the component
             }
-            
-            
-            
         }
     }
 
@@ -758,7 +835,12 @@ impl Component for ChatApp {
 }
 
 impl ChatApp {
-    fn fetch_chat_history(&self, link: &yew::html::Scope<Self>, group_id: i64, current_latest_msg_id: i64) {
+    fn fetch_chat_history(
+        &self,
+        link: &yew::html::Scope<Self>,
+        group_id: i64,
+        current_latest_msg_id: i64,
+    ) {
         if let Some(token) = &self.token {
             let token = token.clone();
             let link = link.clone();
@@ -788,23 +870,39 @@ impl ChatApp {
                             match response.json::<serde_json::Value>().await {
                                 Ok(json) => {
                                     // log::info!("Received chat history response: {:?}", json);
-                                    if let Some(messages) = json.get(&group_id.to_string()).and_then(|g| g.as_array()) {
+                                    if let Some(messages) =
+                                        json.get(&group_id.to_string()).and_then(|g| g.as_array())
+                                    {
                                         let chat_history: Vec<String> = messages
                                             .iter()
                                             .filter_map(|m| {
-                                                let content = m.get("content").and_then(|c| c.as_str())?;
-                                                let sender_name = m.get("sender_name").and_then(|n| n.as_str())?;
+                                                let content =
+                                                    m.get("content").and_then(|c| c.as_str())?;
+                                                let sender_name = m
+                                                    .get("sender_name")
+                                                    .and_then(|n| n.as_str())?;
                                                 Some(format!("{}: {}", sender_name, content))
                                             })
                                             .collect();
                                         // log::info!("Parsed chat history: {:?}", chat_history);
-                                        let latest_msg_id = messages.iter()
-                                            .filter_map(|m| m.get("msg_id").and_then(|id| id.as_i64()))
+                                        let latest_msg_id = messages
+                                            .iter()
+                                            .filter_map(|m| {
+                                                m.get("msg_id").and_then(|id| id.as_i64())
+                                            })
                                             .max()
                                             .unwrap_or(current_latest_msg_id);
-                                        log::info!("Updating history: Latest message ID: {} -> {}", current_latest_msg_id, latest_msg_id);
+                                        log::info!(
+                                            "Updating history: Latest message ID: {} -> {}",
+                                            current_latest_msg_id,
+                                            latest_msg_id
+                                        );
                                         if latest_msg_id > current_latest_msg_id {
-                                            link.send_message(ChatAppMsg::UpdateChatHistory(group_id, chat_history, latest_msg_id));
+                                            link.send_message(ChatAppMsg::UpdateChatHistory(
+                                                group_id,
+                                                chat_history,
+                                                latest_msg_id,
+                                            ));
                                         }
                                     }
                                 }
@@ -821,7 +919,6 @@ impl ChatApp {
                     }
                 }
             });
-            
         }
     }
     fn fetch_groups(&self, link: &yew::html::Scope<Self>) {
@@ -849,7 +946,8 @@ impl ChatApp {
                             match response.json::<Vec<ApiGroup>>().await {
                                 Ok(api_groups) => {
                                     // Convert ApiGroup to Group by adding empty chat_history
-                                    let groups = api_groups.into_iter()
+                                    let groups = api_groups
+                                        .into_iter()
                                         .map(|g| Group {
                                             id: g.id,
                                             name: g.name,
@@ -869,7 +967,10 @@ impl ChatApp {
                         } else if response.status() == 500 {
                             match response.json::<serde_json::Value>().await {
                                 Ok(json) => {
-                                    let error_msg = format!("Database error: {}", json["error"].as_str().unwrap_or("Unknown error"));
+                                    let error_msg = format!(
+                                        "Database error: {}",
+                                        json["error"].as_str().unwrap_or("Unknown error")
+                                    );
                                     log::error!("{}", error_msg);
                                 }
                                 Err(e) => {
@@ -891,15 +992,15 @@ impl ChatApp {
         if let Some(token) = &self.token {
             let token = token.clone();
             let link = link.clone();
-    
+
             let body = serde_json::json!({ "group_id": group_id }).to_string();
-    
+
             let request = reqwasm::http::Request::post("http://localhost:8081/api/group/status")
                 .header("Content-Type", "application/json")
                 .header("Authorization", &format!("Bearer {}", token))
                 .body(body)
                 .send();
-    
+
             wasm_bindgen_futures::spawn_local(async move {
                 match request.await {
                     Ok(response) => {
@@ -911,7 +1012,12 @@ impl ChatApp {
                                         .as_object()
                                         .unwrap_or(&serde_json::Map::new())
                                         .iter()
-                                        .map(|(id, name)| (id.parse::<i64>().unwrap(), name.as_str().unwrap().to_string()))
+                                        .map(|(id, name)| {
+                                            (
+                                                id.parse::<i64>().unwrap(),
+                                                name.as_str().unwrap().to_string(),
+                                            )
+                                        })
                                         .collect::<HashMap<_, _>>();
                                     link.send_message(ChatAppMsg::UpdateOnlineMembers(members));
                                 }
@@ -925,17 +1031,16 @@ impl ChatApp {
         }
     }
 
-    fn setup_online_user_refresh(&self, ctx: &yew::html::Scope<Self>, group_id: i64) {
+    fn setup_online_user_refresh(&mut self, ctx: &yew::html::Scope<Self>, group_id: i64) {
         let link = ctx.clone();
-        gloo::timers::callback::Interval::new(3000, move || {
+        if self.group_status_interval.is_some() {
+            self.group_status_interval.take().unwrap().cancel();
+        }
+        self.group_status_interval = Some(gloo::timers::callback::Interval::new(3000, move || {
             link.send_message(ChatAppMsg::FetchOnlineMembers(group_id));
-        })
-        .forget();
+        }));
     }
-    
-    
 }
-
 
 fn main() {
     wasm_logger::init(wasm_logger::Config::default());
