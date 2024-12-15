@@ -1,8 +1,12 @@
+use crate::chat::chat_server::ChatServer;
+use crate::chat::messages::CheckUserStatus;
 use crate::jwt::get_user_id;
+use actix::prelude::*;
 use actix_web::{get, post, web, HttpRequest, HttpResponse, Result};
 use serde::Deserialize;
 use serde_json::json;
 use sqlx::{Pool, Row, Sqlite};
+use std::collections::HashMap;
 #[derive(Deserialize)]
 struct CreateGroupRequest {
     name: String,
@@ -249,4 +253,74 @@ pub async fn leave_group(
             "error": "Failed to leave group"
         }))),
     }
+}
+
+#[derive(Deserialize)]
+struct GroupStatusRequest {
+    group_id: i64,
+}
+
+#[get("/group/status")]
+pub async fn group_status(
+    req_body: web::Json<GroupStatusRequest>,
+    pool: web::Data<Pool<Sqlite>>,
+    req: HttpRequest,
+    chat_server: web::Data<Addr<ChatServer>>,
+) -> actix_web::Result<HttpResponse> {
+    let user_id = get_user_id(&req);
+    let membership =
+        match sqlx::query("SELECT user_id FROM group_members WHERE group_id = ? AND user_id = ?")
+            .bind(req_body.group_id)
+            .bind(user_id as i64)
+            .fetch_optional(pool.get_ref())
+            .await
+        {
+            Ok(membership) => membership,
+            Err(_) => {
+                return Ok(HttpResponse::InternalServerError().json(json!({
+                    "error": "Failed to check user membership"
+                })))
+            }
+        };
+
+    if membership.is_none() {
+        return Ok(HttpResponse::BadRequest().json(json!({
+            "error": format!("User {} is not a member of group {}", user_id, req_body.group_id)
+        })));
+    }
+    let group_members = match sqlx::query("SELECT user_id FROM group_members WHERE group_id = ?")
+        .bind(req_body.group_id)
+        .fetch_all(pool.get_ref())
+        .await
+    {
+        Ok(members) => members,
+        Err(_) => {
+            return Ok(HttpResponse::InternalServerError().json(json!({
+                "error": "Failed to retrieve group members"
+            })));
+        }
+    };
+    let member_ids: Vec<i64> = group_members.iter().map(|row| row.get("user_id")).collect();
+    let mut online_members = HashMap::new();
+    for id in member_ids {
+        let username = chat_server
+            .send(CheckUserStatus {
+                user_id: id as usize,
+            })
+            .await;
+        match username {
+            Ok(username) => match username {
+                Some(username) => {
+                    online_members.insert(id as usize, username);
+                }
+                None => {
+                    continue;
+                }
+            },
+            Err(_) => {
+                continue;
+            }
+        }
+    }
+    Ok(HttpResponse::Ok().json(json!({ "online_members": online_members })))
 }

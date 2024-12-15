@@ -4,11 +4,13 @@ use std::collections::HashMap;
 use std::time::Instant;
 
 use crate::chat::connection_actor::ConnectionActor;
-use crate::chat::messages::{AddSession, BroadcastMessage, ClientMessage, RemoveSession};
+use crate::chat::messages::{
+    AddSession, BroadcastMessage, CheckUserStatus, ClientMessage, RemoveSession,
+};
 #[derive(Clone)]
 struct SessionInfo {
     _user_id: usize,
-    _username: String,
+    username: String,
     addr: Addr<ConnectionActor>,
     _connected_at: Instant,
 }
@@ -54,7 +56,7 @@ impl ChatServer {
             user_id,
             SessionInfo {
                 _user_id: user_id,
-                _username: username,
+                username,
                 addr,
                 _connected_at: Instant::now(),
             },
@@ -63,6 +65,14 @@ impl ChatServer {
 
     fn remove_session(&mut self, user_id: usize) {
         self.sessions.remove(&user_id);
+    }
+
+    pub fn check_user_status(&self, user_id: usize) -> Option<String> {
+        // Return username if user is online
+        if let Some(session) = self.sessions.get(&user_id) {
+            return Some(session.username.clone());
+        }
+        None
     }
 }
 
@@ -166,5 +176,13 @@ impl Handler<RemoveSession> for ChatServer {
 
     fn handle(&mut self, msg: RemoveSession, _: &mut Context<Self>) {
         self.remove_session(msg.user_id);
+    }
+}
+
+impl Handler<CheckUserStatus> for ChatServer {
+    type Result = Option<String>;
+
+    fn handle(&mut self, msg: CheckUserStatus, _: &mut Context<Self>) -> Option<String> {
+        self.check_user_status(msg.user_id)
     }
 }

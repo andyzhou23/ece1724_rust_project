@@ -11,7 +11,7 @@ mod user;
 use user::{get_history, login, signup};
 
 mod group;
-use group::{create_group, join_group, leave_group, list_groups};
+use group::{create_group, group_status, join_group, leave_group, list_groups};
 
 mod jwt;
 use jwt::http_validator;
@@ -119,6 +119,7 @@ async fn main() -> std::io::Result<()> {
                     .service(list_groups)
                     .service(join_group)
                     .service(leave_group)
+                    .service(group_status)
                     .default_service(web::route().to(api_default)),
             )
             .default_service(web::route().to(not_found))
