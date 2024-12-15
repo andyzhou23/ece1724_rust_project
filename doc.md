@@ -227,7 +227,8 @@
           "group_id": "integer",
           "sender_id": "integer",
           "content": "string",
-          "created_at": "integer"
+          "created_at": "integer",
+          "sender_name": "string"
         }
       ] (old to new)
     }
