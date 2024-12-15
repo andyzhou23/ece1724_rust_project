@@ -126,7 +126,7 @@ pub fn render_main_page(app: &ChatApp, ctx: &Context<ChatApp>) -> Html {
         <div style="display: flex; flex-direction: column; height: 99vh; width: 99vw;">
             // Header
             <div style="padding: 10px; background-color: #007bff; color: white; display: flex; justify-content: space-between; align-items: center;">
-                <h3>{ "Main Page" }</h3>
+                <h3>{ format!("Main Page: {}", app.current_user.as_ref().map_or("".to_string(), |user| user.name.clone())) }</h3>
                 <div style="display: flex; gap: 10px;">
                     <button
                         onclick={link.callback(|_| ChatAppMsg::NavigateTo(Page::NewGroupPage))}
@@ -166,7 +166,7 @@ pub fn render_main_page(app: &ChatApp, ctx: &Context<ChatApp>) -> Html {
                                                     if is_selected { "#e9ecef" } else { "#ffffff" }
                                                 )}
                                             >
-                                                { group_name }
+                                                { format!("{} # {}", group_name, group.code) }
                                             </button>
                                             <button
                                                 onclick={link.callback(move |_| {
@@ -193,14 +193,27 @@ pub fn render_main_page(app: &ChatApp, ctx: &Context<ChatApp>) -> Html {
                             let selected_group = &app.groups[selected_index];
                             html! {
                                 <>
-                                    // Chat header
+                                    /* 
                                     <div style="padding: 15px; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6;">
                                         <h4 style="margin: 0;">{ &selected_group.name }</h4>
                                         <small style="color: #666;">
                                             { format!("{} members", selected_group.members.len()) }
                                         </small>
+                                    </div>*/
+                                    <div style="padding: 15px; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6;">
+                                        <h4 style="margin: 0;">{ &selected_group.name }</h4>
+                                        <small style="color: #666;">
+                                            { format!("{} online member(s) | Online: ", selected_group.members.len()) }
+                                            <span style="color: green;">
+                                                { selected_group.members.iter()
+                                                    .map(|m| m.name.clone())
+                                                    .collect::<Vec<_>>()
+                                                    .join(", ") 
+                                                }
+                                            </span>
+                                        </small>
                                     </div>
-
+                                    
                                     // Chat messages
                                     <div style="flex: 1; padding: 20px; overflow-y: auto;">
                                         { for selected_group.chat_history.iter().map(|message| {
