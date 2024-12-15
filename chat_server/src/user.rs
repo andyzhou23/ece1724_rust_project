@@ -113,7 +113,7 @@ struct HistoryRequest {
     entries: Vec<HistoryRequestEntry>,
 }
 
-#[get("/history")]
+#[post("/history")]
 async fn get_history(
     pool: web::Data<Pool<Sqlite>>,
     req_body: web::Json<HistoryRequest>,
