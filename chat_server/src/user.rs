@@ -1,7 +1,7 @@
 use crate::jwt::create_jwt;
 use crate::jwt::get_user_id;
 use crate::AppConfig;
-use actix_web::{get, post, web, HttpRequest, HttpResponse, Result};
+use actix_web::{post, web, HttpRequest, HttpResponse, Result};
 use serde::Deserialize;
 use serde_json::json;
 use sqlx::{Pool, Row, Sqlite};
@@ -113,7 +113,7 @@ struct HistoryRequest {
     entries: Vec<HistoryRequestEntry>,
 }
 
-#[get("/history")]
+#[post("/history")]
 async fn get_history(
     pool: web::Data<Pool<Sqlite>>,
     req_body: web::Json<HistoryRequest>,
