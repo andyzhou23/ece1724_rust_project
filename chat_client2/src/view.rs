@@ -126,7 +126,7 @@ pub fn render_main_page(app: &ChatApp, ctx: &Context<ChatApp>) -> Html {
         <div style="display: flex; flex-direction: column; height: 99vh; width: 99vw;">
             // Header
             <div style="padding: 10px; background-color: #007bff; color: white; display: flex; justify-content: space-between; align-items: center;">
-                <h3>{ "Main Page" }</h3>
+                <h3>{ format!("Main Page: {}", app.current_user.as_ref().map_or("".to_string(), |user| user.name.clone())) }</h3>
                 <div style="display: flex; gap: 10px;">
                     <button
                         onclick={link.callback(|_| ChatAppMsg::NavigateTo(Page::NewGroupPage))}
@@ -203,7 +203,7 @@ pub fn render_main_page(app: &ChatApp, ctx: &Context<ChatApp>) -> Html {
                                     <div style="padding: 15px; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6;">
                                         <h4 style="margin: 0;">{ &selected_group.name }</h4>
                                         <small style="color: #666;">
-                                            { format!("{} members | Online: ", selected_group.members.len()) }
+                                            { format!("{} online member(s) | Online: ", selected_group.members.len()) }
                                             <span style="color: green;">
                                                 { selected_group.members.iter()
                                                     .map(|m| m.name.clone())

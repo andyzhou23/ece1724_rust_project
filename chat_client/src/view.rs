@@ -126,7 +126,7 @@ pub fn render_main_page(app: &ChatApp, ctx: &Context<ChatApp>) -> Html {
         <div style="display: flex; flex-direction: column; height: 99vh; width: 99vw;">
             // Header
             <div style="padding: 10px; background-color: #007bff; color: white; display: flex; justify-content: space-between; align-items: center;">
-                <h3>{ "Main Page" }</h3>
+                <h3>{ format!("Main Page: {}", app.current_user.as_ref().map_or("".to_string(), |user| user.name.clone())) }</h3>
                 <div style="display: flex; gap: 10px;">
                     <button
                         onclick={link.callback(|_| ChatAppMsg::NavigateTo(Page::NewGroupPage))}

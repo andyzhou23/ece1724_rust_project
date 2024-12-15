@@ -74,6 +74,8 @@ enum ChatAppMsg {
     SendWebSocketMessage(String),
     UpdateChatHistory(i64, Vec<String>, i64),
     UpdateOnlineMembers(HashMap<i64, String>),
+    FetchOnlineMembers(i64), // To fetch online members for a specific group
+
 }
 
 impl Component for ChatApp {
@@ -423,6 +425,7 @@ impl Component for ChatApp {
                 if let Some(group) = self.groups.get(index) {
                     self.fetch_online_members(ctx.link(), group.id); // Fetch online members
                     self.fetch_chat_history(ctx.link(), group.id, group.latest_msg_id);
+                    self.setup_online_user_refresh(ctx.link(), group.id); // Set up 3-second refresh
                 }
                 true
             }
@@ -734,6 +737,11 @@ impl Component for ChatApp {
                 }
                 true
             }
+            ChatAppMsg::FetchOnlineMembers(group_id) => {
+                self.fetch_online_members(ctx.link(), group_id);
+                false // Don't re-render the component
+            }
+            
             
             
         }
@@ -916,6 +924,15 @@ impl ChatApp {
             });
         }
     }
+
+    fn setup_online_user_refresh(&self, ctx: &yew::html::Scope<Self>, group_id: i64) {
+        let link = ctx.clone();
+        gloo::timers::callback::Interval::new(3000, move || {
+            link.send_message(ChatAppMsg::FetchOnlineMembers(group_id));
+        })
+        .forget();
+    }
+    
     
 }
 
