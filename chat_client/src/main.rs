@@ -73,6 +73,7 @@ enum ChatAppMsg {
     WebSocketMessageReceived(String),
     SendWebSocketMessage(String),
     UpdateChatHistory(i64, Vec<String>, i64),
+    UpdateOnlineMembers(HashMap<i64, String>),
 }
 
 impl Component for ChatApp {
@@ -420,6 +421,7 @@ impl Component for ChatApp {
             ChatAppMsg::SelectGroup(index) => {
                 self.selected_group = Some(index);
                 if let Some(group) = self.groups.get(index) {
+                    self.fetch_online_members(ctx.link(), group.id); // Fetch online members
                     self.fetch_chat_history(ctx.link(), group.id, group.latest_msg_id);
                 }
                 true
@@ -635,7 +637,7 @@ impl Component for ChatApp {
                 log::info!("WebSocket connected");
                 let link = ctx.link().clone();
                 self.ws_ping_interval =
-                    Some(gloo::timers::callback::Interval::new(60000, move || {
+                    Some(gloo::timers::callback::Interval::new(5000, move || {
                         link.send_message(ChatAppMsg::SendWebSocketMessage("ping".to_string()));
                     }));
                 let link = ctx.link().clone();
@@ -653,6 +655,17 @@ impl Component for ChatApp {
                 true
             }
             ChatAppMsg::DisconnectWebSocket => {
+                log::info!("Websocket disconnected");
+                let ws_write = self.ws_write.clone();
+                if let Some(ws_write) = ws_write {
+                    wasm_bindgen_futures::spawn_local(async move {
+                        ws_write
+                            .borrow_mut()
+                            .send(Message::Text("{disconnect}".to_string()))
+                            .await
+                            .unwrap();
+                    });
+                }
                 self.ws_write = None;
                 true
             }
@@ -701,6 +714,28 @@ impl Component for ChatApp {
                 }
                 true
             }
+            ChatAppMsg::UpdateOnlineMembers(members) => {
+                if let Some(selected_index) = self.selected_group {
+                    if let Some(group) = self.groups.get_mut(selected_index) {
+                        group.members = members.into_iter()
+                            .map(|(id, name)| Member { id, name })
+                            .collect();
+            
+                        // Sort members by name alphabetically, and then by id numerically
+                        group.members.sort_by(|a, b| {
+                            let name_order = a.name.to_lowercase().cmp(&b.name.to_lowercase());
+                            if name_order == std::cmp::Ordering::Equal {
+                                a.id.cmp(&b.id) // Compare IDs if names are equal
+                            } else {
+                                name_order
+                            }
+                        });
+                    }
+                }
+                true
+            }
+            
+            
         }
     }
 
@@ -844,6 +879,44 @@ impl ChatApp {
             });
         }
     }
+    fn fetch_online_members(&self, link: &yew::html::Scope<Self>, group_id: i64) {
+        if let Some(token) = &self.token {
+            let token = token.clone();
+            let link = link.clone();
+    
+            let body = serde_json::json!({ "group_id": group_id }).to_string();
+    
+            let request = reqwasm::http::Request::post("http://localhost:8081/api/group/status")
+                .header("Content-Type", "application/json")
+                .header("Authorization", &format!("Bearer {}", token))
+                .body(body)
+                .send();
+    
+            wasm_bindgen_futures::spawn_local(async move {
+                match request.await {
+                    Ok(response) => {
+                        if response.status() == 200 {
+                            match response.json::<serde_json::Value>().await {
+                                Ok(json) => {
+                                    log::info!("Received online members response: {:?}", json);
+                                    let members = json["online_members"]
+                                        .as_object()
+                                        .unwrap_or(&serde_json::Map::new())
+                                        .iter()
+                                        .map(|(id, name)| (id.parse::<i64>().unwrap(), name.as_str().unwrap().to_string()))
+                                        .collect::<HashMap<_, _>>();
+                                    link.send_message(ChatAppMsg::UpdateOnlineMembers(members));
+                                }
+                                Err(_) => log::error!("Failed to parse online members response"),
+                            }
+                        }
+                    }
+                    Err(_) => log::error!("Network error while fetching online members"),
+                }
+            });
+        }
+    }
+    
 }
 
 

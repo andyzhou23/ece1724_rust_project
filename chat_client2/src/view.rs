@@ -193,14 +193,27 @@ pub fn render_main_page(app: &ChatApp, ctx: &Context<ChatApp>) -> Html {
                             let selected_group = &app.groups[selected_index];
                             html! {
                                 <>
-                                    // Chat header
+                                    /* 
                                     <div style="padding: 15px; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6;">
                                         <h4 style="margin: 0;">{ &selected_group.name }</h4>
                                         <small style="color: #666;">
                                             { format!("{} members", selected_group.members.len()) }
                                         </small>
+                                    </div>*/
+                                    <div style="padding: 15px; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6;">
+                                        <h4 style="margin: 0;">{ &selected_group.name }</h4>
+                                        <small style="color: #666;">
+                                            { format!("{} members | Online: ", selected_group.members.len()) }
+                                            <span style="color: green;">
+                                                { selected_group.members.iter()
+                                                    .map(|m| m.name.clone())
+                                                    .collect::<Vec<_>>()
+                                                    .join(", ") 
+                                                }
+                                            </span>
+                                        </small>
                                     </div>
-
+                                    
                                     // Chat messages
                                     <div style="flex: 1; padding: 20px; overflow-y: auto;">
                                         { for selected_group.chat_history.iter().map(|message| {

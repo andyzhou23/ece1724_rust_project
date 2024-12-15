@@ -11,10 +11,15 @@ pub async fn ws_connect(
     req: HttpRequest,
     stream: web::Payload,
     chat_server: web::Data<Addr<ChatServer>>,
+    app_config: web::Data<AppConfig>,
 ) -> Result<HttpResponse, Error> {
     let user_id = get_user_id(&req);
     ws::start(
-        ConnectionActor::new(chat_server.get_ref().clone(), user_id),
+        ConnectionActor::new(
+            chat_server.get_ref().clone(),
+            user_id,
+            app_config.heartbeat_timeout,
+        ),
         &req,
         stream,
     )
@@ -40,7 +45,11 @@ pub async fn ws_connect_with_path(
         }
     };
     ws::start(
-        ConnectionActor::new(chat_server.get_ref().clone(), user_id),
+        ConnectionActor::new(
+            chat_server.get_ref().clone(),
+            user_id,
+            app_config.heartbeat_timeout,
+        ),
         &req,
         stream,
     )
