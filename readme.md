@@ -2,7 +2,7 @@
 
 ## Team Information
 
-- **Team Member 1**: Ming Yang (1006262223) - Preferred Email
+- **Team Member 1**: Ming Yang (1006262223) - <mingy.yang@mail.utoronto.ca>
 - **Team Member 2**: Xinran Ji (1006093843) - <lisa.ji@mail.utoronto.ca>
 - **Team Member 3**: Yukun Zhou (1010122494) - Preferred Email
 
