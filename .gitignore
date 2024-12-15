@@ -3,4 +3,4 @@
 local_try/
 Cargo.lock
 *.pyc
-chat_client/dist/
+*/dist/
