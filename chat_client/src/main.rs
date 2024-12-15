@@ -189,8 +189,6 @@ impl Component for ChatApp {
                 }
                 true
             }
-            
-
 
             ChatAppMsg::JoinGroup(join_code) => {
                 if join_code.is_empty() {
@@ -259,8 +257,6 @@ impl Component for ChatApp {
                 true
             }
 
-
-
             ChatAppMsg::JoinGroupResponse(result) => {
                 match result {
                     Ok((group_id, group_name, group_code)) => {
@@ -291,32 +287,6 @@ impl Component for ChatApp {
                 true
             }
 
-
-
-
-            // ChatAppMsg::DeleteGroup(group_id) => {
-            //     // Find and remove the group with matching ID
-            //     if let Some(index) = self.groups.iter().position(|g| g.id == group_id) {
-            //         let group = &self.groups[index];
-            //         // Remove the join code from the HashMap if it exists
-            //         if let Some(join_code) = &group.join_code {
-            //             self.join_codes.remove(join_code);
-            //         }
-            //         // Remove the group from the vector
-            //         self.groups.remove(index);
-            //         // Reset selected_group if the deleted group was selected
-            //         if Some(index) == self.selected_group {
-            //             self.selected_group = None;
-            //         } else if let Some(selected) = self.selected_group {
-            //             if selected > index {
-            //                 // Adjust selected_group index if it was after the deleted group
-            //                 self.selected_group = Some(selected - 1);
-            //             }
-            //         }
-            //         log::info!("Group deleted: {}", group_id);
-            //     }
-            //     true
-            // }
             ChatAppMsg::DeleteGroup(group_id) => {
                 // First remove the group locally
                 if let Some(index) = self.groups.iter().position(|g| g.id == group_id) {
@@ -355,49 +325,6 @@ impl Component for ChatApp {
                             //let status = response.status();
                             let json_response = response.json::<serde_json::Value>().await;
                             log::info!("Response JSON: {:?}", json_response);
-
-                            // if status == 200 {
-                            //     match json_response {
-                            //         Ok(json) => {
-                            //             if let Some(message) = json["message"].as_str() {
-                            //                 link.send_message(ChatAppMsg::DeleteGroupResponse(Ok(message.to_string())));
-                            //             } else {
-                            //                 link.send_message(ChatAppMsg::DeleteGroupResponse(Err("Invalid response format".to_string())));
-                            //             }
-                            //         }
-                            //         Err(_) => {
-                            //             link.send_message(ChatAppMsg::DeleteGroupResponse(Err("Failed to parse response".to_string())));
-                            //         }
-                            //     }
-                            // } else {
-                            //     if status == 400 {
-                            //         match json_response {
-                            //             Ok(json) => {
-                            //                 let error_msg = json["error"].as_str().unwrap_or_default().to_string();
-                            //                 log::error!("Server error message: {}", error_msg);
-                            //                 link.send_message(ChatAppMsg::DeleteGroupResponse(Err(error_msg)));
-                            //             }
-                            //             Err(e) => {
-                            //                 let error_msg = format!("Failed to parse error response: {}", e);
-                            //                 log::error!("{}", error_msg);
-                            //                 link.send_message(ChatAppMsg::DeleteGroupResponse(Err(error_msg)));
-                            //             }
-                            //         }
-                            //     } else {
-                            //         match response.text().await {
-                            //             Ok(error_text) => {
-                            //                 let error_msg = format!("Status {}: {}", status, error_text);
-                            //                 log::error!("{}", error_msg);
-                            //                 link.send_message(ChatAppMsg::DeleteGroupResponse(Err(error_msg)));
-                            //             }
-                            //             Err(e) => {
-                            //                 let error_msg = format!("Failed to read error response: {}", e);
-                            //                 log::error!("{}", error_msg);
-                            //                 link.send_message(ChatAppMsg::DeleteGroupResponse(Err(error_msg)));
-                            //             }
-                            //         }
-                            //     }
-                            // }
                         }
                         Err(_) => {
                             link.send_message(ChatAppMsg::DeleteGroupResponse(Err("Network error".to_string())));
@@ -407,7 +334,6 @@ impl Component for ChatApp {
 
                 true
             }
-            
             
             ChatAppMsg::DeleteGroupResponse(result) => {
                 match result {
@@ -604,9 +530,6 @@ impl Component for ChatApp {
                 self.error_message = None;
                 true
             }
-
-
-
             ChatAppMsg::RegisterResponse(result) => {
                 match result {
                     Ok(username) => {
@@ -692,7 +615,6 @@ impl Component for ChatApp {
                             }
                         }
                     }
-                    // TODO: Handle the parsed JSON message, e.g., update the chat history or UI
                 } else {
                     log::info!("Received message: {}", message);
                 }
@@ -742,11 +664,8 @@ impl Component for ChatApp {
             }
             ChatAppMsg::FetchOnlineMembers(group_id) => {
                 self.fetch_online_members(ctx.link(), group_id);
-                false // Don't re-render the component
-            }
-            
-            
-            
+                false 
+            }         
         }
     }
 

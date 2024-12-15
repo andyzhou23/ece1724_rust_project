@@ -117,8 +117,6 @@ pub fn render_login_page(app: &ChatApp, ctx: &Context<ChatApp>) -> Html {
     }
 }
 
-
-
 pub fn render_main_page(app: &ChatApp, ctx: &Context<ChatApp>) -> Html {
     let link = ctx.link();
 
@@ -193,13 +191,6 @@ pub fn render_main_page(app: &ChatApp, ctx: &Context<ChatApp>) -> Html {
                             let selected_group = &app.groups[selected_index];
                             html! {
                                 <>
-                                    /* 
-                                    <div style="padding: 15px; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6;">
-                                        <h4 style="margin: 0;">{ &selected_group.name }</h4>
-                                        <small style="color: #666;">
-                                            { format!("{} members", selected_group.members.len()) }
-                                        </small>
-                                    </div>*/
                                     <div style="padding: 15px; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6;">
                                         <h4 style="margin: 0;">{ &selected_group.name }</h4>
                                         <small style="color: #666;">
