@@ -83,8 +83,13 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ConnectionActor {
                         self.last_active_at = Instant::now();
                     }
                     Err(_) => {
-                        ctx.text("RawText: ".to_string() + &text);
-                        self.last_active_at = Instant::now();
+                        if text == "{disconnect}" {
+                            ctx.text(format!("User {}: disconnected", self.user_id));
+                            ctx.stop();
+                        } else {
+                            ctx.text("RawText: ".to_string() + &text);
+                            self.last_active_at = Instant::now();
+                        }
                     }
                 };
             }
