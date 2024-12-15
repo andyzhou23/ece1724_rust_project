@@ -16,7 +16,7 @@ pub struct Claims {
 pub fn create_jwt(user_id: usize, secret: &str) -> Result<String, jsonwebtoken::errors::Error> {
     let claims = Claims {
         user_id,
-        exp: (chrono::Utc::now().timestamp() as u64) + 3600 * 24,
+        exp: (chrono::Utc::now().timestamp() as u64) + 3600 * 24 * 30,
     };
 
     let header = Header::new(Algorithm::HS256);
