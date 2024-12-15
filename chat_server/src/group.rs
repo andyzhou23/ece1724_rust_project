@@ -260,7 +260,7 @@ struct GroupStatusRequest {
     group_id: i64,
 }
 
-#[get("/group/status")]
+#[post("/group/status")]
 pub async fn group_status(
     req_body: web::Json<GroupStatusRequest>,
     pool: web::Data<Pool<Sqlite>>,
