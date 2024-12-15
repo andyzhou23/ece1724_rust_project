@@ -41,6 +41,7 @@ struct ChatApp {
     current_user: Option<Member>,
     ws_write: Option<Rc<RefCell<SplitSink<WebSocket, Message>>>>,
     ws_ping_interval: Option<Interval>,
+    group_status_interval: Option<Interval>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -96,6 +97,8 @@ impl Component for ChatApp {
             // websocket
             ws_write: None,
             ws_ping_interval: None,
+            // group status interval
+            group_status_interval: None,
         }
     }
 
@@ -925,12 +928,14 @@ impl ChatApp {
         }
     }
 
-    fn setup_online_user_refresh(&self, ctx: &yew::html::Scope<Self>, group_id: i64) {
+    fn setup_online_user_refresh(&mut self, ctx: &yew::html::Scope<Self>, group_id: i64) {
         let link = ctx.clone();
-        gloo::timers::callback::Interval::new(3000, move || {
+        if self.group_status_interval.is_some() {
+            self.group_status_interval.take().unwrap().cancel();
+        }
+        self.group_status_interval = Some(gloo::timers::callback::Interval::new(3000, move || {
             link.send_message(ChatAppMsg::FetchOnlineMembers(group_id));
-        })
-        .forget();
+        }));
     }
     
     
