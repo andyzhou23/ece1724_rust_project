@@ -113,7 +113,7 @@ struct HistoryRequest {
     entries: Vec<HistoryRequestEntry>,
 }
 
-#[get("/history")]
+#[post("/history")]
 async fn get_history(
     pool: web::Data<Pool<Sqlite>>,
     req_body: web::Json<HistoryRequest>,
@@ -147,7 +147,7 @@ async fn get_history(
         let messages = match sqlx::query(
             "SELECT id, group_id, user_id, content, created_at FROM messages 
              WHERE group_id = ? AND id > ? 
-             ORDER BY id DESC",
+             ORDER BY id ASC",
         )
         .bind(entry.group_id as i64)
         .bind(entry.latest_msg_id as i64)
