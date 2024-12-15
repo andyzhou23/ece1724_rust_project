@@ -748,8 +748,11 @@ impl ChatApp {
                                     if let Some(messages) = json.get(&group_id.to_string()).and_then(|g| g.as_array()) {
                                         let chat_history: Vec<String> = messages
                                             .iter()
-                                            .filter_map(|m| m.get("content").and_then(|c| c.as_str()))
-                                            .map(String::from)
+                                            .filter_map(|m| {
+                                                let content = m.get("content").and_then(|c| c.as_str())?;
+                                                let sender_name = m.get("sender_name").and_then(|n| n.as_str())?;
+                                                Some(format!("{}: {}", sender_name, content))
+                                            })
                                             .collect();
                                         // log::info!("Parsed chat history: {:?}", chat_history);
                                         let latest_msg_id = messages.iter()

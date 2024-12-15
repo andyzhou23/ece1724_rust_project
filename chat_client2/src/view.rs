@@ -166,7 +166,7 @@ pub fn render_main_page(app: &ChatApp, ctx: &Context<ChatApp>) -> Html {
                                                     if is_selected { "#e9ecef" } else { "#ffffff" }
                                                 )}
                                             >
-                                                { group_name }
+                                                { format!("{} # {}", group_name, group.code) }
                                             </button>
                                             <button
                                                 onclick={link.callback(move |_| {
