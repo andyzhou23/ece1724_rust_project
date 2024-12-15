@@ -55,7 +55,7 @@
     - 401 Unauthorized: Username or password incorrect
     - 500 Internal Server Error: Database errors
   - Test:
-    - curl -w "\n" "http://localhost:8081/login" --json '{"username":"user_1", "password":"123456"}'
+    - curl -w "\n" "http://localhost:8081/login" --json '{"username":"user_1", "password":"111"}'
 
 ### jwt protected api (prefix: /api)
 
@@ -176,8 +176,33 @@
   - Test:
     - curl -w "\n" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" "http://localhost:8081/api/group/leave" --json '{"group_id":1}'
 
-- `/api/history`
+- `/api/group/status`
   - GET
+  - Request:
+
+    ```json
+    {
+      "group_id": "integer"
+    }
+    ```
+
+  - Response:
+
+    ```json
+    {
+      "online_members": {
+        "integer": "string" (user_id:username)
+      }
+    }
+    ```
+
+  - Error responses:
+    - 500 Internal Server Error: Database errors
+  - Test:
+    - curl -w "\n" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" "http://localhost:8081/api/group/status" --json '{"group_id":1}' -X GET
+
+- `/api/history`
+  - POST
   - Request:
 
     ```json
@@ -202,9 +227,10 @@
           "group_id": "integer",
           "sender_id": "integer",
           "content": "string",
-          "created_at": "integer"
+          "created_at": "integer",
+          "sender_name": "string"
         }
-      ]
+      ] (old to new)
     }
     ```
 
@@ -212,7 +238,7 @@
     - 500 Internal Server Error: Database errors
     - If user is not a member of group, its key will be missing in the response
   - Test:
-    - curl -w "\n" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" "http://localhost:8081/api/history" --json '{"entries":[{"group_id":1, "latest_msg_id":5}]}' -X GET
+    - curl -w "\n" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" "http://localhost:8081/api/history" --json '{"entries":[{"group_id":1, "latest_msg_id":5}]}'
 
 ## WebSocket Payload Format
 

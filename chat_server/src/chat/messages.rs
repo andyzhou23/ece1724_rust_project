@@ -35,3 +35,9 @@ pub struct BroadcastMessage {
     pub created_at: u64,
     pub sender_name: String,
 }
+
+#[derive(Message)]
+#[rtype(result = "Option<String>")]
+pub struct CheckUserStatus {
+    pub user_id: usize,
+}

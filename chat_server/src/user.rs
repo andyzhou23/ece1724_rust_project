@@ -145,9 +145,11 @@ async fn get_history(
             continue;
         }
         let messages = match sqlx::query(
-            "SELECT id, group_id, user_id, content, created_at FROM messages 
-             WHERE group_id = ? AND id > ? 
-             ORDER BY id DESC",
+            "SELECT m.id, m.group_id, m.user_id, m.content, m.created_at, u.name 
+             FROM messages m
+             JOIN users u ON m.user_id = u.id
+             WHERE m.group_id = ? AND m.id > ? 
+             ORDER BY m.id ASC",
         )
         .bind(entry.group_id as i64)
         .bind(entry.latest_msg_id as i64)
@@ -162,7 +164,8 @@ async fn get_history(
                         "group_id": row.get::<i64, _>("group_id"),
                         "sender_id": row.get::<i64, _>("user_id"),
                         "content": row.get::<String, _>("content"),
-                        "created_at": row.get::<i64, _>("created_at")
+                        "created_at": row.get::<i64, _>("created_at"),
+                        "sender_name": row.get::<String, _>("name")
                     })
                 })
                 .collect::<Vec<_>>(),
