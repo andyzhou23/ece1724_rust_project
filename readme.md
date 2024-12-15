@@ -3,15 +3,16 @@
 ## Team Information
 
 - **Team Member 1**: Ming Yang (1006262223) - Preferred Email
-- **Team Member 2**: Xinran Ji (1006093843) - lisa.ji@mail.utoronto.ca
+- **Team Member 2**: Xinran Ji (1006093843) - <lisa.ji@mail.utoronto.ca>
 - **Team Member 3**: Yukun Zhou (1010122494) - Preferred Email
 
 ---
 
 ## Motivation
 
-*What inspired the team to work on this project? Why is it interesting, useful, or necessary?*  
-(Add a brief description of the motivation behind your project here.)
+There are many chat applications available, each with different features. However, privacy and security requirements often complicate the process of online chatting. Typically, users must request permission to add others as friends, using either a QR code or an account number, which can make it difficult to start a group chat quickly. Instant online communication is essential in many situations, but it does not always require the same level of privacy and security. For instance, in a classroom activity or event, a teacher or organizer might need to quickly set up a public chat group for information collection or course discussions. If they could create a temporary chat group, inviting everyone involved to join simply by entering a group number or access code (without requiring permission), the process would be much faster and more convenient.
+
+This need for quick, public and unrestricted access is why we decided to develop a light-weight, real-time, instant online chat solution. Our application allows anyone to create a chat group instantly by generating a temporary join code, enabling participants to join quickly by simpy entering the join code without permissions or resitrictions and leave the group freely.
 
 ---
 
@@ -19,9 +20,20 @@
 
 *What are the goals and intended outcomes of this project?*  
 
-- Objective 1:
-- Objective 2  
-- Objective 3  
+- **Objective 1: Develop a user-friendly application for online chatting**  
+  Ensure that the login and registration processes are simple and intuitive. Design the chat interface to be easy to use and navigate, providing an accessible experience for all users.
+
+- **Objective 2: Build a simple and efficient chat group management system**  
+  Allow users to create, join, and leave chat groups effortlessly. Eliminate unnecessary restrictions and permissions, enabling groups to be created and joined quickly.
+
+- **Objective 3: Ensure the application is secure and reliable**  
+  Require each user to have a unique username and password. Implement a join code system for group participation to maintain privacy and prevent unnecessary complications.
+
+- **Objective 4: Ensure real-time online chatting**  
+  Deliver chat messages instantly without delay to maintain a seamless and fluent chatting experience.
+
+- **Objective 5: Provide reliable backup functionality**  
+  Store all chat history and group information in the server database. Ensure that even if a user logs out, the chat history and group details are restored upon logging back in.
 
 ---
 
@@ -31,7 +43,7 @@
 
 ### Client
 
-- **Feature 1**: (Short description)  
+- **Registeration**:  
 - **Feature 2**: (Short description)  
 - **Feature 3**: (Short description)  
 
@@ -49,12 +61,16 @@
 
 ### Client
 
-1. **Using Feature 1**: (Explain how to use it step-by-step)  
-2. **Using Feature 2**: (Explain how to use it step-by-step)  
-3. **Using Feature 3**: (Explain how to use it step-by-step)  
+1. **Registeration**: (Explain how to use it step-by-step)  
+2. **Login**: (Explain how to use it step-by-step)  
+3. **Create a new group**: (Explain how to use it step-by-step)
+4. **Join a group**: (Explain how to use it step-by-step)
+5. **Chat**: (Explain how to use it step-by-step)
+6. **Leave a group**: (Explain how to use it step-by-step)
+7. **Logout**: (Explain how to use it step-by-step)
 
 ### Server
-
+ 
 1. **Using Feature 1**: (Explain how to use it step-by-step)  
 2. **Using Feature 2**: (Explain how to use it step-by-step)  
 3. **Using Feature 3**: (Explain how to use it step-by-step)  
