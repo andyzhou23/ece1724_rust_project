@@ -9,20 +9,24 @@ pub struct ConnectionActor {
     user_id: usize,
     chat_server: Addr<ChatServer>,
     last_active_at: Instant,
+    heartbeat_timeout: u64,
 }
 
 impl ConnectionActor {
-    pub fn new(chat_server: Addr<ChatServer>, user_id: usize) -> Self {
+    pub fn new(chat_server: Addr<ChatServer>, user_id: usize, heartbeat_timeout: u64) -> Self {
         Self {
             user_id,
             chat_server,
             last_active_at: Instant::now(),
+            heartbeat_timeout,
         }
     }
 
     fn start_heartbeat(&self, ctx: &mut ws::WebsocketContext<Self>) {
-        ctx.run_interval(Duration::from_secs(5), |actor, ctx| {
-            if Instant::now().duration_since(actor.last_active_at) > Duration::from_secs(1000) {
+        ctx.run_interval(Duration::from_secs(3), |actor, ctx| {
+            if Instant::now().duration_since(actor.last_active_at)
+                > Duration::from_secs(actor.heartbeat_timeout)
+            {
                 ctx.stop(); // todo: config heartbeat timeout
             }
         });

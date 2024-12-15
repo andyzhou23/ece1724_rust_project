@@ -48,6 +48,7 @@ async fn not_found() -> impl Responder {
 struct AppConfig {
     port: u16,
     jwt_secret: String,
+    heartbeat_timeout: u64,
 }
 
 #[actix_web::main]
@@ -69,6 +70,14 @@ async fn main() -> std::io::Result<()> {
                 .help("Sets the port to listen on")
                 .default_value("8081"),
         )
+        .arg(
+            clap::Arg::new("heartbeat_timeout")
+                .long("timeout")
+                .short('t')
+                .value_name("TIMEOUT")
+                .help("Sets the heartbeat timeout")
+                .default_value("1000"),
+        )
         .get_matches();
 
     let dbpath = arg_matches.get_one::<String>("dbpath").unwrap();
@@ -77,7 +86,11 @@ async fn main() -> std::io::Result<()> {
         .unwrap()
         .parse::<u16>()
         .unwrap();
-
+    let heartbeat_timeout = arg_matches
+        .get_one::<String>("heartbeat_timeout")
+        .unwrap()
+        .parse::<u64>()
+        .unwrap();
     let pool = db_init(dbpath)
         .await
         .expect("Failed to initialize database");
@@ -90,6 +103,7 @@ async fn main() -> std::io::Result<()> {
     let app_config = AppConfig {
         port: port.clone(),
         jwt_secret,
+        heartbeat_timeout,
     };
     println!(
         "The server is currently listening on localhost:{}.",
