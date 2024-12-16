@@ -1,5 +1,9 @@
 # Final Project Report
 
+## Video Demo
+
+Video demo is in the `chat_app_demo.mp4` file under this GitHub repository.
+
 ## Team Information
 
 - **Team Member 1**: Ming Yang (1006262223) - <mingy.yang@mail.utoronto.ca>
