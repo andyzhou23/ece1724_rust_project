@@ -212,7 +212,9 @@ To test the server's function during development, we used several tools:
 
     ```bash
     # Serve the project using Trunk
-    trunk serve --release
+    # Please run multiple clients on different ports, one for each user.
+    # Please use port number 9090, 9091, 9092, etc.
+    trunk serve --release --port 9090
     ```
 
 ### Server
