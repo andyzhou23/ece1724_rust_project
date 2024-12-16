@@ -94,23 +94,30 @@ This need for quick, public and unrestricted access is why we decided to develop
 1. **Environment Setup**  
 
     ```bash
-    # Example commands for setting up the environment
-    sudo apt update && sudo apt install <required-packages>
+    # Update package lists and install necessary tools
+    sudo apt update && sudo apt install curl nodejs npm
+    # Install Rust and Cargo
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    # Add WebAssembly target for Rust
+    rustup target add wasm32-unknown-unknown
+    # Install Trunk for building the Yew application
+    cargo install trunk
     ```
 
 2. **Building the Project**  
 
     ```bash
-    # Example build commands
-    cargo build --release
+    # Build the project using Trunk
+    trunk build --release
     ```
 
 3. **Running the Project**  
 
     ```bash
-    # Example run commands
-    ./target/release/<project-binary-name>
+    # Serve the project using Trunk
+    trunk serve --release
     ```
+
 
 ### Server
 
@@ -129,7 +136,7 @@ This need for quick, public and unrestricted access is why we decided to develop
 ## Lessons Learned and Concluding Remarks
 
 *Summarize the lessons the team learned during the project, challenges faced, and key takeaways.*  
-(Add your reflections and concluding thoughts here.)
+This project successfully demonstrates the development of a Yew-based web application for real-time communication. By incorporating essential features such as user registration, authentication, group creation, and group participation, it highlights the seamless integration of client-side interactivity with server-side communication through WebSocket and HTTP protocols. Our team gained valuable insights into modern web application development using Rust and Yew. One of the key lessons was the importance of structuring a reactive front-end application to efficiently manage state and handle asynchronous communication. Working with WebSockets provided hands-on experience in implementing real-time features, allows users to send and receive messages instantly without delay. We also learned the significance of balancing security and functionality, particularly when implementing features like user authentication, token-based session management, and error feedback. The use of Rust’s strict type system and borrow checker encouraged us to adopt safer coding practices and design more robust systems, especially for tasks like state management and server communication. Collaboration within the team taught us the value of effective communication, version control with Git, and breaking down tasks into manageable modules.
 
 ---
 
