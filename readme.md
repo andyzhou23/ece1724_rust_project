@@ -4,7 +4,7 @@
 
 - **Team Member 1**: Ming Yang (1006262223) - <mingy.yang@mail.utoronto.ca>
 - **Team Member 2**: Xinran Ji (1006093843) - <lisa.ji@mail.utoronto.ca>
-- **Team Member 3**: Yukun Zhou (1010122494) - Preferred Email
+- **Team Member 3**: Yukun Zhou (1010122494) - <yukun.zhou@mail.utoronto.ca>
 
 ---
 
@@ -139,7 +139,7 @@ To test the server's function during development, we used several tools:
 
 5. **Note**: The data is stored in `server.db`, please delete it if you want to reset the database.
 
-## User’s (or Developer’s) Guide
+## User’s Guide
 
 *Provide instructions for using the main features of your project, whether it is a standalone application or a crate.*  
 
@@ -215,25 +215,27 @@ To test the server's function during development, we used several tools:
 *Break down the contributions made by each team member.*  
 
 - **Ming Yang (1006262223)**: Responsible for implementing the Client Logic, designing the user interface, and managing the process of sending HTTP requests to the server to send and receive data. Tasks include developing core client-side functionality, ensuring smooth communication with the back-end through efficient data exchange, and contributing to the creation of a clear and functional user interface. Additional responsibilities involve participating in cross-testing to validate functionality and ensure seamless integration across all project components.  
+
 - **Xinran Ji (1006093843)**:
 Responsible for the design and implementation of the client-side user interface, with a primary focus on the registration and login pages. Conducted a comprehensive analysis of various approaches for GUI development and selected Yew as the framework due to its compatibility and efficiency. Evaluated the feasibility of using SQLite for data handling but ultimately decided against it due to its incompatibility with Yew. Played a key role in debugging and testing HTTP requests, ensuring accurate error handling and message display. Developed JSON parsing and HTTP request/response handling for core group functionalities, including creating, joining, and leaving groups. Additionally, contributed to the project report by authoring sections on motivation, objectives, user account and group management features, and the reproducibility guide.
-- **Team Member 3**: (Description of contributions)  
+
+- **Yukun Zhou (1010122494)**:
+Responsible for all server-side logic design, implementation, documentation and testing. Including database schema, APIs, WebSocket, authentication, message broadcasting, etc. Also recorded the demo video.
 
 ---
 
 ## Lessons Learned and Concluding Remarks
 
 *Summarize the lessons the team learned during the project, challenges faced, and key takeaways.*  
-This project successfully demonstrates the development of a Yew-based web application for real-time communication. By incorporating essential features such as user registration, authentication, group creation, and group participation, it highlights the seamless integration of client-side interactivity with server-side communication through WebSocket and HTTP protocols. Our team gained valuable insights into modern web application development using Rust and Yew. One of the key lessons was the importance of structuring a reactive front-end application to efficiently manage state and handle asynchronous communication. Working with WebSockets provided hands-on experience in implementing real-time features, allows users to send and receive messages instantly without delay. We also learned the significance of balancing security and functionality, particularly when implementing features like user authentication, token-based session management, and error feedback. The use of Rust’s strict type system and borrow checker encouraged us to adopt safer coding practices and design more robust systems, especially for tasks like state management and server communication. Collaboration within the team taught us the value of effective communication, version control with Git, and breaking down tasks into manageable modules.
+
+This project successfully demonstrates the development of a Yew and Actix based web application for real-time communication.
+
+By incorporating essential features such as user registration, authentication, group creation, and group participation, it highlights the seamless integration of client-side interactivity with server-side communication through WebSocket and HTTP protocols. Our team gained valuable insights into modern web application development using Rust and Yew.
+
+One of the key lessons was the importance of structuring a reactive front-end application to efficiently manage state and handle asynchronous communication. For the back-end, it is important to design the APIs in a neat way, which is clearly defined and compatible with the futures improvements.Working with WebSockets provided hands-on experience in implementing real-time features, allows users to send and receive messages instantly without delay, this is a new technique we learned during this project.
+
+We also learned the significance of balancing security and functionality, particularly when implementing features like user authentication, token-based session management, and error feedback. The use of Rust’s strict type system and borrow checker encouraged us to adopt safer coding practices and design more robust systems, especially for tasks like state management and server communication.
+
+Collaboration within the team taught us the value of effective communication, version control with Git, and breaking down tasks into manageable modules.
 
 ---
-
-## Screenshots and Images
-
-*Include relevant screenshots or images to visually support your report. Ensure that the images are stored in the repository and linked correctly.*
-
-![Example Screenshot](images/example-screenshot.png)
-
----
-
-**Note**: This project was developed as part of [Course Name/Code]. All instructions above were tested on Ubuntu Linux and macOS Sonoma.
