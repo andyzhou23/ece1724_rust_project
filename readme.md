@@ -147,8 +147,8 @@ To test the server's function during development, we used several tools:
 
 2. **Login**: Access the server login page by entering URL in the browser. Provide your username and password in the respective input fields, then click "Login" to proceed. If the credentials are invalid, an error message will be displayed. Upon successful authentication, you will be redirected to the home page.
 3. **Main Page**: Enter the main page when successfully logged in. Clicking "New Group" will navigate to the new group page. Clicking "Logout" will log out the current user and navigate to the login page. Clicking on a group will display the chat history of the group or start a new chat in chat window.
-4. **Create a new group**: Click "New Group" on the main page to nevigate to the new group page. Enter a group name and click "Create" to proceed. The group will be created and added to the user's list of groups.
-5. **Join a group**: Click "Join a Group" on the main page to nevigate to the new group page. Enter a group name and click "Join" to proceed. The group will be joined and added to the user's list of groups.
+4. **Create a new group**: Click "New Group" on the main page to nevigate to the new group page. Enter a group name and click "Create" to proceed. The group will be created and added to the user's list of groups with a join code.
+5. **Join a group**: Click "Join a Group" on the main page to nevigate to the new group page. Enter a join code and click "Join" to proceed. The group will be joined and added to the user's list of groups.
 6. **Online Chat**: After selecting a group in the main page, the chat window displays the group name, online members list, and chat history. Type messages in the input field at the bottom and press Enter or click "Send" to send messages. Messages appear instantly in the chat window for all online group members. The chat history is automatically saved and loaded when rejoining the group. Online members are shown in real-time as they join or leave the group.
 7. **Leave a group**: Click cross button on the group card in the main page to leave the group.
 8. **Logout**: Click "Logout" on the main page to log out the current user and navigate to the login page.
@@ -172,6 +172,13 @@ To test the server's function during development, we used several tools:
     rustup target add wasm32-unknown-unknown
     # Install Trunk for building the Yew application
     cargo install trunk
+    ```
+
+    - **If you encounter errors related to `openssl-sys` or `pkg-config` while building a Rust project on Ubuntu or macOS, follow these steps to resolve the issue:**:
+
+    ```bash
+    sudo apt update
+    sudo apt install pkg-config
     ```
 
 2. **Building the Project**  
@@ -207,8 +214,9 @@ To test the server's function during development, we used several tools:
 
 *Break down the contributions made by each team member.*  
 
-- **Team Member 1**: (Description of contributions)  
-- **Team Member 2**: (Description of contributions)  
+- **Ming Yang (1006262223)**: Responsible for implementing the Client Logic, designing the user interface, and managing the process of sending HTTP requests to the server to send and receive data. Tasks include developing core client-side functionality, ensuring smooth communication with the back-end through efficient data exchange, and contributing to the creation of a clear and functional user interface. Additional responsibilities involve participating in cross-testing to validate functionality and ensure seamless integration across all project components.  
+- **Xinran Ji (1006093843)**:
+Responsible for the design and implementation of the client-side user interface, with a primary focus on the registration and login pages. Conducted a comprehensive analysis of various approaches for GUI development and selected Yew as the framework due to its compatibility and efficiency. Evaluated the feasibility of using SQLite for data handling but ultimately decided against it due to its incompatibility with Yew. Played a key role in debugging and testing HTTP requests, ensuring accurate error handling and message display. Developed JSON parsing and HTTP request/response handling for core group functionalities, including creating, joining, and leaving groups. Additionally, contributed to the project report by authoring sections on motivation, objectives, user account and group management features, and the reproducibility guide.
 - **Team Member 3**: (Description of contributions)  
 
 ---
