@@ -12,6 +12,16 @@ The video demo is in the `chat_app_demo.mp4` file under this GitHub repository.
 
 ---
 
+## Table of Contents
+
+1. [Motivation](#motivation)
+1. [Objectives](#objectives)
+1. [Features](#features)
+1. [User's Guide](#user-guide)
+1. [Reproducibility Guide](#reproducibility-guide)
+1. [Contributions](#contributions-by-team-members)
+1. [Conclusion](#lessons-learned-and-concluding-remarks)
+
 ## Motivation
 
 There are many chat applications available, each with different features. However, privacy and security requirements often complicate the process of online chatting. Typically, users must request permission to add others as friends, using either a QR code or an account number, which can make it difficult to start a group chat quickly. Instant online communication is essential in many situations, but it does not always require the same level of privacy and security. For instance, in a classroom activity or event, a teacher or organizer might need to quickly set up a public chat group for information collection or course discussions. If they could create a chat group, inviting everyone involved to join simply by entering a group number or access code (without requiring permission), the process would be much faster and more convenient.
@@ -149,7 +159,7 @@ To test the server's function during development, we used several tools:
 
 5. **Note**: The data is stored in `server.db`, please delete it if you want to reset the database.
 
-## User’s Guide
+## User Guide
 
 *Provide instructions for using the main features of your project, whether it is a standalone application or a crate.*  
 
