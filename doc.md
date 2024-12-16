@@ -177,7 +177,7 @@
     - curl -w "\n" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" "http://localhost:8081/api/group/leave" --json '{"group_id":1}'
 
 - `/api/group/status`
-  - GET
+  - POST
   - Request:
 
     ```json
@@ -199,7 +199,7 @@
   - Error responses:
     - 500 Internal Server Error: Database errors
   - Test:
-    - curl -w "\n" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" "http://localhost:8081/api/group/status" --json '{"group_id":1}' -X GET
+    - curl -w "\n" -H "Authorization: Bearer YOUR_ACCESS_TOKEN" "http://localhost:8081/api/group/status" --json '{"group_id":1}'
 
 - `/api/history`
   - POST
@@ -207,7 +207,6 @@
 
     ```json
     {
-      "user_id": "integer",
       "entries": [
         {
           "group_id": "integer",
