@@ -35,9 +35,9 @@ pub fn validate_jwt(token: &str, secret: &str) -> Result<Claims, jsonwebtoken::e
 }
 
 pub fn _generate_secret() -> String {
-    let rng = StdRng::from_entropy(); // 使用标准随机数生成器
+    let rng = StdRng::from_entropy();
     rng.sample_iter(&Alphanumeric)
-        .take(32) // 生成32个随机字符
+        .take(32)
         .map(char::from)
         .collect()
 }

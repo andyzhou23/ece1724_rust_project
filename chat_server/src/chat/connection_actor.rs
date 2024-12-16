@@ -27,7 +27,7 @@ impl ConnectionActor {
             if Instant::now().duration_since(actor.last_active_at)
                 > Duration::from_secs(actor.heartbeat_timeout)
             {
-                ctx.stop(); // todo: config heartbeat timeout
+                ctx.stop();
             }
         });
     }
