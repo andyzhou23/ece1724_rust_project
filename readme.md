@@ -182,6 +182,7 @@ To test the server's function during development, we used several tools:
 ### Client
 
 1. **Environment Setup**  
+  First, please `cd` to the `chat_client` folder.
 
     ```bash
     # Update package lists and install necessary tools
@@ -190,14 +191,16 @@ To test the server's function during development, we used several tools:
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
     # Add WebAssembly target for Rust
     rustup target add wasm32-unknown-unknown
-    # Install Trunk for building the Yew application
+    # Install Trunk for building the Yew application, this could take a while
     cargo install trunk
     ```
 
     - **If you encounter errors related to `openssl-sys` or `pkg-config` while building a Rust project on Ubuntu or macOS, follow these steps to resolve the issue:**:
 
     ```bash
+    # mac user please use brew instead of apt
     sudo apt update
+    sudo apt install openssl
     sudo apt install pkg-config
     ```
 
@@ -220,7 +223,8 @@ To test the server's function during development, we used several tools:
 ### Server
 
 1. **Environment Setup**  
-    Please make sure the rust environment is set up correctly, and that port 8081 is not occupied by other applications.
+    First, please `cd` to the `chat_server` folder.  
+    Please make sure the rust environment is set up correctly, and that port `8081` is not occupied by other applications.
     Delete the `server.db` file if you want to reset the database.
 
 2. **Running the Project**  
